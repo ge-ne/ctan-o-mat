@@ -393,7 +393,7 @@ sub init {
 %
 % The second form uses an environment enclosed in \\begin{}/\\end{}.
 %
-%
+\\usepackage[1.0]{ctan-o-mat}
 % 
 % You should enter your values between the begin and the end of the
 % named type.
