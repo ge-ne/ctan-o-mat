@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
-##*****************************************************************************
-##
+##-----------------------------------------------------------------------------
+## This file is part of ctan-o-mat.
 ## This program is distributed under BSD-like license. See file LICENSE
 ## 
 ## (c) 2016 Gerd Neugebauer
@@ -14,7 +14,7 @@
 ## You should have received a copy of the LICENSE along with this
 ## program; if not, see the repository under http://***.
 ##
-##=============================================================================
+##-----------------------------------------------------------------------------
 
 =head1 NAME
 
