@@ -3,7 +3,7 @@
 ## This file is part of ctan-o-mat.
 ## This program is distributed under BSD-like license. See file LICENSE
 ## 
-## (c) 2016 Gerd Neugebauer
+## (c) 2016-2017 Gerd Neugebauer
 ## 
 ## Net: gene@gerd-neugebauer.de
 ## 
@@ -106,8 +106,9 @@ use LWP::Protocol::https;
 #use JSON qw( decode_json );
 use HTTP::Request::Common;
 
-use constant PARAMETER_URL => "file:ctan.cfg";
-use constant UPLOAD_URL => "file:ctan.upload";
+use constant PARAMETER_URL => "file:dev/ctan.cfg";
+#use constant UPLOAD_URL => "file:ctan.upload";
+use constant UPLOAD_URL => "http://localhost:8080/submit/1.0/upload";
 
 use constant API_VERSION => "1.0";
 
@@ -150,11 +151,14 @@ my $upload = 1;
 my %parameter = ();
 
 use Getopt::Long;
-GetOptions("debug"	     => \$debug,
-	   "h|help"	     => \&usage,
-	   "init"            => \&init,
-	   "noaction"	     => sub { $upload = undef; },
-	   "v|verbose"	     => \$verbose,
+GetOptions("config=s"	=> \$config,
+	   "pkg=s"	=> \$config,
+	   "package=s"	=> \$config,
+	   "debug"	=> \$debug,
+	   "h|help"	=> \&usage,
+	   "init"	=> \&init,
+	   "noaction"	=> sub { $upload = undef; },
+	   "v|verbose"	=> \$verbose,
 	  );
 
 retrieve_params();
@@ -186,13 +190,13 @@ sub upload {
 
   print STDERR "Uploading to CTAN..." if $verbose;
   local $_;
-  my $ua = LWP::UserAgent->new();
-  my $request = HTTP::Request->new(POST UPLOAD_URL,
-				   Content_Type => 'multipart/form-data',
-				   Content => $cfg);
+  my $ua       = LWP::UserAgent->new();
+  my $request  = POST UPLOAD_URL,
+                 Content_Type => 'multipart/form-data',
+		 Content => $cfg;
   my $response = $ua->request($request);
 
-  die "\nError ", $response->status_line, "\n" if not $response->is_success;
+  die "\nError: ", $response->status_line, "\n" if not $response->is_success;
 
   my @a = split /\n/, $response->decoded_content;
 
@@ -301,7 +305,7 @@ sub check_in {
 sub check {
   my ($cfg, $key, $len, $canBeEmpty) = @_;
 
-  print $key, ' ',$cfg->{$key}, "\n";
+  print $key, ' ',$cfg->{$key}, "\n" if $verbose;
 
   if (not defined $cfg->{$key}) {
     print STDERR "*** Missing $key.\n";
@@ -336,7 +340,7 @@ sub read_config {
     while (m/\\([a-z]+)/i) {
       $_ = $';
       if ($1 eq 'begin') {
-	die "$config: missing {envirnment} instead of $_\n"
+	die "$config: missing {environment} instead of $_\n"
 	    if not m/^[ \t]*\{([a-z]*)\}/i;
 	my $tag	= $1;
 	my $val = '';
@@ -358,7 +362,9 @@ sub read_config {
 	my $key = $1;
 	die "$config: missing {environment} instead of $_\n"
 	    if not m/^[ \t]*\{([^{}]*)\}/i;
-	$cfg{$key} = $1;
+
+	if ($key eq 'file') { $cfg{$key} = [$1];
+	} else {	      $cfg{$key} = $1; }
 	$_ = $';
       } else {
 	die "$config: undefined keyword $&\n";
