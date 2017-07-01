@@ -130,6 +130,10 @@ sub usage
 #
 my $verbose = 0;
 
+#------------------------------------------------------------------------------
+# Variable:	$debug
+# Description:	The debug level.
+#
 my $debug = 0;
 
 #------------------------------------------------------------------------------
@@ -142,7 +146,13 @@ my $config = undef;
 # Variable:	$upload
 # Description:	
 #
-my $upload = 1;
+my $upload = undef;
+
+#------------------------------------------------------------------------------
+# Variable:	$update
+# Description:	
+#
+my $update = 'true';
 
 #------------------------------------------------------------------------------
 # Variable:	%parameter
@@ -157,6 +167,8 @@ GetOptions("config=s"	=> \$config,
 	   "debug"	=> \$debug,
 	   "h|help"	=> \&usage,
 	   "init"	=> \&init,
+	   "new"	=> sub { $update = "false"; },
+	   "update"	=> sub { $update = "true"; },
 	   "noaction"	=> sub { $upload = undef; },
 	   "v|verbose"	=> \$verbose,
 	  );
@@ -170,6 +182,10 @@ foreach $_ (@ARGV) {
 $config = basename(getcwd).'.pkg' if not defined $config;
 
 my $cfg = read_config();
+if (defined $update) {
+  $cfg->{'update'} = $update;
+}
+
 exit(1) if validate_config($cfg) != 0;
 
 if ($debug) {
