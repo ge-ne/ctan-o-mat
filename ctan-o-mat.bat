@@ -3,7 +3,7 @@
 @rem  This file is part of ctan-o-mat.
 @rem  This program is distributed under BSD-like license. See file LICENSE
 @rem  
-@rem  (c) 2016 Gerd Neugebauer
+@rem  (c) 2016-2017 Gerd Neugebauer
 @rem  
 @rem  Net: gene@gerd-neugebauer.de
 @rem  
