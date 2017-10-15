@@ -103,12 +103,10 @@ use File::Basename;
 use Cwd;
 use LWP::UserAgent;
 use LWP::Protocol::https;
-#use JSON qw( decode_json );
 use HTTP::Request::Common;
 
 use constant PARAMETER_URL => "file:dev/ctan.cfg";
-#use constant UPLOAD_URL => "file:ctan.upload";
-use constant UPLOAD_URL => "http://localhost:8080/submit/1.0/upload";
+use constant UPLOAD_URL => "http://localhost:8080/submit/upload";
 
 use constant API_VERSION => "1.0";
 
