@@ -3,16 +3,16 @@
 ## This file is part of ctan-o-mat.
 ## This program is distributed under BSD-like license. See file LICENSE
 ##
-## (c) 2016 Gerd Neugebauer
+## (c) 2016-2017 Gerd Neugebauer
 ##
 ## Net: gene@gerd-neugebauer.de
 ##
-## This program is free software; you can redistribute it and/or modify
-## it under the terms of a 3-clause BSD-like license as stated in the
-## file LICENSE contained in this distribution.
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of a 3-clause BSD-like license as stated in the file
+## LICENSE contained in this distribution.
 ##
-## You should have received a copy of the LICENSE along with this
-## program; if not, see the repository under http://***.
+## You should have received a copy of the LICENSE along with this program; if
+## not, see the repository under https://github.com/ge-ne/ctan-o-mat.
 ##
 ##-----------------------------------------------------------------------------
 
@@ -22,7 +22,7 @@ ctan-o-mat.pl - Upload a package to CTAN
 
 =head1 SYNOPSIS
 
-ctan-o-mat.pl [options] [<package>]
+ctan-o-mat.pl [options] [<package configuration>]
 
 =head1 DESCRIPTION
 
@@ -47,6 +47,8 @@ overwritten on the command line.
 =item --help
 
 Print this short summary about the usage and exit the program.
+
+=item --validate
 
 =item -n
 
@@ -180,22 +182,21 @@ GetOptions(
 	"validate"  => sub { $method = VALIDATE },
 );
 
+$config = $ARGV[0] if defined $ARGV[0];
+if ( not defined $config ) {
+	$config = cwd();
+	$config =~ s|.*[/\\]||;
+	$config = $config . '.cfg';
+}
+
 fields();
 
 if ( $method == NEW_CONFIG ) {
 	new_config();
 }
 else {
-
-	if ( defined $config ) {
-		my $cfg = read_config();
-		print $cfg;
-	}
-
-	#	upload( $ARGV[0] );
+	upload( read_config() );
 }
-
-print "\n";
 
 #------------------------------------------------------------------------------
 # Function:	upload
@@ -211,20 +212,7 @@ sub upload {
 	my $ua      = LWP::UserAgent->new();
 	my $request = POST $service_url,
 	  Content_Type => 'multipart/form-data',
-	  Content      => [
-		name        => 'Gerd Neugebauer',
-		email       => 'gene@gerd-neugebauer.de',
-		author      => 'x',
-		uploader    => 'x',
-		description => 'x',
-		pkg         => 'bibtool',
-		version     => '1.2.3',
-		update      => 'true',
-		note        => 'x',
-		license     => 'gpl',
-		license     => 'lppl',
-		file        => [$f]
-	  ];
+	  Content      => $f;
 	print STDERR "done\n" if $verbose;
 	my $response = $ua->request($request);
 
@@ -232,9 +220,12 @@ sub upload {
 	  "\n"
 	  if not $response->is_success;
 
-	my @a = split /\n/, $response->decoded_content;
-
-	print @a;
+	if ( $method == VALIDATE and $response->decoded_content eq '[]' ) {
+		print "ok\n";
+	}
+	else {
+		print format_errors( $response->decoded_content, 'ok' ), "\n"
+	}
 }
 
 #------------------------------------------------------------------------------
@@ -306,7 +297,7 @@ sub fields {
 sub read_config {
 	my %cfg = ();
 	my $fd  = new FileHandle($config)
-	  || die "*** File `$config' could not be read.\n";
+	  || die "*** Configuration file `$config' could not be read.\n";
 	my $slurp = undef;
 	local $_;
 
@@ -324,8 +315,7 @@ sub read_config {
 				while ( not m/\\end\{$tag\}/ ) {
 					$val .= $_;
 					$_ = <$fd>;
-					die
-"$config: unexpected end of file while searching end of $tag\n"
+					die "$config: unexpected end of file while searching end of $tag\n"
 					  if not defined $_;
 				}
 				$val .= $`;
@@ -401,8 +391,7 @@ __EOF__
 			print "% It may have a relative or absolute directory.\n";
 		}
 		if ( defined $fields{$_}->{'maxsize'} ) {
-			print
-"% The value is restricted to $fields{$_}->{'maxsize'} characters.\n";
+			print "% The value is restricted to $fields{$_}->{'maxsize'} characters.\n";
 		}
 		if ( defined $fields{$_}->{'list'} ) {
 			print "% Multiple values are allowed.\n\\$_\{}\n";
