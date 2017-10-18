@@ -374,7 +374,7 @@ __EOF__
 	foreach ( keys(%fields) ) {
 		print <<__EOF__;
 % -------------------------------------------------------------------------
-% This field contains the $fields{$_}->{'text'}
+% This field contains the $fields{$_}->{'text'}.
 __EOF__
 		if ( defined $fields{$_}->{'nullable'} ) {
 			print "% The value is optional.\n";
