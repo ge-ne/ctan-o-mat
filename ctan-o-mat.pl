@@ -171,15 +171,15 @@ my %parameter = ();
 
 use Getopt::Long;
 GetOptions(
-	"config=s"  => \$config,
-	"pkg=s"     => \$config,
-	"package=s" => \$config,
-	"debug"     => \$debug,
-	"h|help"    => \&usage,
-	"init"      => sub { $method = NEW_CONFIG },
-	"noaction"  => sub { $upload = undef; },
-	"v|verbose" => \$verbose,
-	"validate"  => sub { $method = VALIDATE },
+	"config=s"   => \$config,
+	"pkg=s"      => \$config,
+	"package=s"  => \$config,
+	"debug"      => \$debug,
+	"h|help"     => \&usage,
+	"init"       => sub { $method = NEW_CONFIG },
+	"n|noaction" => sub { $upload = undef; },
+	"v|verbose"  => \$verbose,
+	"validate"   => sub { $method = VALIDATE },
 );
 
 $config = $ARGV[0] if defined $ARGV[0];
