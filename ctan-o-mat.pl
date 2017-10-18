@@ -18,7 +18,7 @@
 
 =head1 NAME
 
-ctan-o-mat.pl - Upload a package to CTAN
+ctan-o-mat.pl - Upload or validate a package for CTAN
 
 =head1 SYNOPSIS
 
@@ -30,13 +30,29 @@ This program can be used to automate the upload of a package to CTAN
 (https://www.ctan.org). The description of the package is contained in
 a configuration file.
 
+The provided information is validated in any case. If the validation
+succeeds and not only the validation is requested then the provided
+archive file is placed in the incoming area of the CTAN.
+
+In any case any finding during the validation is reported at the end
+of the processing.
+
+ctan-o-mat requires an internet connection to the CTAN server. Even the
+validation retrieves the known attributes and the basic constraints
+from the server.
+
+
 =head1 CONFIGURATION
 
 The default configuration is read from a file with the same name as
 the current directory an the extension .cfg. This file name can be
 overwritten on the command line.
 
-...
+The configuration depends on the features supported by the CTAN server.
+Since these features can change over time the configuration is not
+hard-coded in ctan-o-mat. You can request a template of the
+configuration via the command line parameter *-init*.
+
 
 =head1 OPTIONS
 
