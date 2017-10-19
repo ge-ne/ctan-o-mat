@@ -1,8 +1,8 @@
 #******************************************************************************
-#* Author: Gerd Neugebauer
+#* (c) 2017 Gerd Neugebauer
 #*=============================================================================
 
-FILES = ctan-o-map	\
+FILES = ctan-o-mat	\
 	ctan-o-mat.bat	\
 	ctan-o-mat.pl	\
 	LICENSE		\
