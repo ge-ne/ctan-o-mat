@@ -18,11 +18,11 @@
 
 =head1 NAME
 
-ctan-o-mat.pl - Upload or validate a package for CTAN
+ctan-o-mat - Upload or validate a package for CTAN
 
 =head1 SYNOPSIS
 
-ctan-o-mat.pl [options] [<package configuration>]
+ctan-o-mat [options] [<package configuration>]
 
 =head1 DESCRIPTION
 
@@ -37,7 +37,7 @@ archive file is placed in the incoming area of the CTAN.
 In any case any finding during the validation is reported at the end
 of the processing.
 
-ctan-o-mat requires an internet connection to the CTAN server. Even the
+B<ctan-o-mat> requires an internet connection to the CTAN server. Even the
 validation retrieves the known attributes and the basic constraints
 from the server.
 
@@ -50,8 +50,8 @@ overwritten on the command line.
 
 The configuration depends on the features supported by the CTAN server.
 Since these features can change over time the configuration is not
-hard-coded in ctan-o-mat. You can request a template of the
-configuration via the command line parameter *-init*.
+hard-coded in B<ctan-o-mat>. You can request a template of the
+configuration via the command line parameter C<-init>.
 
 
 =head1 OPTIONS
@@ -96,9 +96,19 @@ CONFIUGURATION) contained in a file.
 
 =back
 
+=head1 CONNECTING VIA PROXIES
+
+If you need to connect to the Internet via a proxy then this can be achieved
+by setting some environment variables before running B<ctan-o-mat>.
+To redirect the request via the proxy simply define an environment variable
+C<http_proxy> to point to the proxy host -- including protocol and port as
+required. Note that the name of the environment variable is supposed to be in
+B<lower> case.
+
+
 =head1 AUTHOR
 
-Gerd Neugebauer
+Gerd Neugebauer (gene@gerd-neugebauer.de)
 
 =head1 BUGS
 
@@ -107,7 +117,7 @@ Gerd Neugebauer
 =item *
 
 The program can not be used without a working connection to the
-internet.
+Internet.
 
 =back
 
