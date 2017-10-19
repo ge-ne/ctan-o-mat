@@ -32,10 +32,13 @@ a configuration file.
 
 The provided information is validated in any case. If the validation
 succeeds and not only the validation is requested then the provided
-archive file is placed in the incoming area of the CTAN.
+archive file is placed in the incoming area of the CTAN for further
+processing by the CTAN team.
 
 In any case any finding during the validation is reported at the end
-of the processing.
+of the processing. Note that the validation is the default and a
+official submission has to be requested by the an appropriate command
+line option.
 
 B<ctan-o-mat> requires an internet connection to the CTAN server. Even the
 validation retrieves the known attributes and the basic constraints
@@ -78,6 +81,13 @@ resulting messages are printed.
 =item --init
 
 Create an empty template for a configuration.
+
+=item -s
+
+=item --submit
+
+Upload the submission, validate it and officially submit it to CTAN it the 
+validation succeeds.
 
 =item -v
 
@@ -132,8 +142,6 @@ use LWP::UserAgent;
 use LWP::Protocol::https;
 use HTTP::Request::Common;
 
-use constant PARAMETER_URL => 'file:dev/ctan.cfg';
-
 use constant CTAN_URL => 'http://localhost:8080/submit/';
 
 use constant UPLOAD_URL   => CTAN_URL . 'upload';
@@ -165,10 +173,14 @@ my $verbose = 0;
 
 #------------------------------------------------------------------------------
 # Variable:	$method
-# Description:	The validation indicator.
+# Description:	The validation or submit indicator.
 #
-my $method = UPLOAD;
+my $method = VALIDATE;
 
+#------------------------------------------------------------------------------
+# Variable:	$debug
+# Description:	The debug indicator.
+#
 my $debug = 0;
 
 #------------------------------------------------------------------------------
@@ -176,12 +188,6 @@ my $debug = 0;
 # Description:	The name of the configuration file.
 #
 my $config = undef;
-
-#------------------------------------------------------------------------------
-# Variable:	$upload
-# Description:
-#
-my $upload = 1;
 
 #------------------------------------------------------------------------------
 # Variable:	@fields
@@ -203,9 +209,10 @@ GetOptions(
 	"debug"      => \$debug,
 	"h|help"     => \&usage,
 	"init"       => sub { $method = NEW_CONFIG },
-	"n|noaction" => sub { $upload = undef; },
+	"n|noaction" => sub { $method = VALIDATE; },
+	"submit"     => sub { $method = UPLOAD; },
 	"v|verbose"  => \$verbose,
-	"validate"   => sub { $method = VALIDATE },
+	"validate"   => sub { $method = VALIDATE; },
 );
 
 $config = $ARGV[0] if defined $ARGV[0];

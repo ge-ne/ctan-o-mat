@@ -20,10 +20,13 @@ a configuration file.
 
 The provided information is validated in any case. If the validation
 succeeds and not only the validation is requested then the provided
-archive file is placed in the incoming area of the CTAN.
+archive file is placed in the incoming area of the CTAN for further
+processing by the CTAN team.
 
 In any case any finding during the validation is reported at the end
-of the processing.
+of the processing. Note that the validation is the default and a
+official submission has to be requested by the an appropriate command
+line option.
 
 *ctan-o-mat* requires an Internet connection to the CTAN server. Even the
 validation retrieves the known attributes and the basic constraints
@@ -63,6 +66,13 @@ configuration via the command line parameter `-init`.
   <dt><code>--init</code></dt>
   <dd>
     Create an empty template for a configuration.
+  </dd>
+  
+  <dt><code>-s</code></dt>
+  <dt><code>--submit</code></dt>
+  <dd>
+    Upload the submission, validate it and officially submit it to
+    CTAN it the validation succeeds.
   </dd>
   
   <dt><code>-v</code></dt>
