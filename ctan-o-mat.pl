@@ -249,7 +249,6 @@ if ( $method == NEW_CONFIG ) {
 #
 sub upload {
 	my $f = shift;
-
 	print STDERR "Uploading to CTAN..." if $verbose;
 	my $service_url = $UPLOAD_URL;
 	$service_url = $VALIDATE_URL if $method == VALIDATE;
@@ -363,6 +362,7 @@ sub read_config {
 					die "$config: unexpected end of file while searching end of $tag\n"
 					  if not defined $_;
 				}
+				m/\\end\{$tag\}/;
 				$val .= $`;
 				$val =~ s/^[ \t\n\r]*//m;
 				$val =~ s/[ \t\n\r]*$//m;
