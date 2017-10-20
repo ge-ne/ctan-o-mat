@@ -50,20 +50,16 @@ configuration via the command line parameter `-init`.
   </dd>
 
   <dt><code>--validate</code></dt>
-  <dt><code>-n</code></dt>
-  <dt><code>--noaction</code></dt>
   <dd>
     Do not perform the final upload. The package is validated and the
     resulting messages are printed.
   </dd> 
 
-  <dt><code>-i</code></dt>
   <dt><code>--init</code></dt>
   <dd>
     Create an empty template for a configuration.
   </dd>
   
-  <dt><code>-s</code></dt>
   <dt><code>--submit</code></dt>
   <dd>
     Upload the submission, validate it and officially submit it to
@@ -86,7 +82,7 @@ configuration via the command line parameter `-init`.
     Print some additional debugging information.
   </dd>
 
-  <dt>&lt;package&gt;</dt>
+  <dt><code>&lt;package&gt;</code></dt>
   <dd>
     This parameter is the name of a package configuration
     (see section CONFIGURATION) contained in a file.

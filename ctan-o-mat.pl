@@ -195,13 +195,13 @@ my $config = undef;
 
 #------------------------------------------------------------------------------
 # Variable:	@fields
-# Description:
+# Description: The constraints for the known fields.
 #
 my %fields = ();
 
 #------------------------------------------------------------------------------
 # Variable:	@parameter
-# Description:	The list of fields
+# Description:	The list of fields.
 #
 my @parameter = ();
 

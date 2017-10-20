@@ -98,7 +98,8 @@ while(<>) {
 	s/<dl>/\\begin{description}/;
 	s/<\/dl>/\\end{description}/;
 	s/<code>(.*)<\/code>/\\texttt{$1}/;
-	s/<dt>(.*)<\/dt>/\\item[$1]/;
+	s/<dt>/\\item[/;
+	s/<\/dt>/]/;
 	s/<dd>/\\ \\\\/;
 	s/ - / -- /;
 	s/&gt;/\\(>\\)/;
