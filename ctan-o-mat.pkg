@@ -1,0 +1,131 @@
+% This is a description file for ctan-o-mat.
+% It manages uploads of a package to 
+% CTAN -- the Comprehensive TeX Archive Network.
+%
+% The syntax is roughly oriented towards (La)TeX.
+% Two form of the macros are used. The simple macros take one argument
+% in braces. Here the argument may not contain embedded macros.
+%
+% The second form uses an environment enclosed in \begin{}/\end{}.
+% In the long text fields logo macros can be used.
+%
+% You should enter your values between the begin and the end of the
+% named type.
+% -------------------------------------------------------------------------
+% This field contains the CTAN id of the package.
+% The value is optional.
+% The value is restricted to 32 characters.
+\pkg{ctan-o-mat}
+% -------------------------------------------------------------------------
+% This field contains the version of the package.
+% The value is optional.
+% The value is restricted to 32 characters.
+\version{1.0}
+% -------------------------------------------------------------------------
+% This field contains the name of the author(s).
+% The value is optional.
+% The value is restricted to 128 characters.
+\author{Gerd Neugebauer}
+% -------------------------------------------------------------------------
+% This field contains the email address of the uploader.
+% The value is an email address.
+% The value is restricted to 255 characters.
+\email{gene@gerd-neugebauer.de}
+% -------------------------------------------------------------------------
+% This field contains the name of the uploader.
+% The value is restricted to 255 characters.
+\uploader{Gerd Neugebauer}
+% -------------------------------------------------------------------------
+% This field contains the directory on CTAN.
+% The value is optional.
+% The value is restricted to 255 characters.
+\ctanPath{/support/ctan-o-mat}
+% -------------------------------------------------------------------------
+% This field contains the license.
+% The value is optional.
+% The value is restricted to 2048 characters.
+% Multiple values are allowed.
+\license{bsd3}
+% -------------------------------------------------------------------------
+% This field contains the URL of the home page.
+% The value is optional.
+% The value is a URL.
+% The value is restricted to 255 characters.
+% Multiple values are allowed.
+\home{https://github.com/ge-ne/ctan-o-mat}
+% -------------------------------------------------------------------------
+% This field contains the URL of the bug tracker.
+% The value is optional.
+% The value is a URL.
+% The value is restricted to 255 characters.
+% Multiple values are allowed.
+\bugtracker{https://github.com/ge-ne/ctan-o-mat/issues}
+% -------------------------------------------------------------------------
+% This field contains the support channel.
+% The value is optional.
+% The value is a URL.
+% The value is restricted to 255 characters.
+% Multiple values are allowed.
+\support{}
+% -------------------------------------------------------------------------
+% This field contains the version management.
+% The value is optional.
+% The value is a URL.
+% The value is restricted to 255 characters.
+% Multiple values are allowed.
+\repository{https://github.com/ge-ne/ctan-o-mat}
+% -------------------------------------------------------------------------
+% This field contains the developer's channel.
+% The value is optional.
+% The value is a URL.
+% The value is restricted to 255 characters.
+% Multiple values are allowed.
+\development{}
+% -------------------------------------------------------------------------
+% This field contains the update indicator; true for update.
+% The value is optional.
+% The value is restricted to 8 characters.
+\update{false}
+% -------------------------------------------------------------------------
+% This field contains the topics id.
+% The value is optional.
+% The value is restricted to 1024 characters.
+% Multiple values are allowed.
+\topic{ctan}
+% -------------------------------------------------------------------------
+% This field contains the text for the mail announcement.
+% The value is optional.
+% The value is restricted to 8192 characters.
+\begin{announcement}
+This program can be used to automate the upload of a package to CTAN.
+The description of the package is contained in a configuration file.
+
+The provided information is validated in any case. If the validation
+succeeds and not only the validation is requested then the provided
+archive file is placed in the incoming area of the CTAN for further
+processing by the CTAN team.
+
+In any case any finding during the validation is reported at the end
+of the processing. Note that the validation is the default and a
+official submission has to be requested by the an appropriate command
+line option.
+
+ctan-o-mat requires an Internet connection to the CTAN server. Even the
+validation retrieves the known attributes and the basic constraints
+from the server.
+\end{announcement}
+% -------------------------------------------------------------------------
+% This field contains the one-liner for the package.
+% The value is optional.
+% The value is restricted to 4096 characters.
+\begin{description}Upload or validate a package for CTAN\end{description}
+% -------------------------------------------------------------------------
+% This field contains the note to the CTAN upload managers.
+% The value is optional.
+% The value is restricted to 2048 characters.
+\begin{note}\end{note}
+% -------------------------------------------------------------------------
+% This field contains the archive file.
+% The value is the file name of the archive to be uploaded.
+% It may have a relative or absolute directory.
+\file{ctan-o-mat.zip}

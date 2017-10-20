@@ -28,7 +28,8 @@ ctan-o-mat [options] [<package configuration>]
 
 This program can be used to automate the upload of a package to CTAN
 (https://www.ctan.org). The description of the package is contained in
-a configuration file.
+a configuration file. Thus it can be updated easily without the need
+to fill a Web form with the same old information.
 
 The provided information is validated in any case. If the validation
 succeeds and not only the validation is requested then the provided
@@ -40,7 +41,7 @@ of the processing. Note that the validation is the default and a
 official submission has to be requested by the an appropriate command
 line option.
 
-B<ctan-o-mat> requires an internet connection to the CTAN server. Even the
+B<ctan-o-mat> requires an Internet connection to the CTAN server. Even the
 validation retrieves the known attributes and the basic constraints
 from the server.
 
@@ -48,7 +49,7 @@ from the server.
 =head1 CONFIGURATION
 
 The default configuration is read from a file with the same name as
-the current directory an the extension .cfg. This file name can be
+the current directory an the extension .pkg. This file name can be
 overwritten on the command line.
 
 The configuration depends on the features supported by the CTAN server.
@@ -95,14 +96,18 @@ validation succeeds.
 
 Print some more information during the processing (verbose mode).
 
+=item --version
+
+Print the version number of this program and exit.
+
 =item --validate
 
 Print some additional debugging information.
 
 =item <package>
 
-This parameter is the name of a package configuration (see section
-CONFIUGURATION) contained in a file.
+This parameter is the name of a package configuration
+(see section CONFIGURATION) contained in a file.
 
 =back
 
@@ -142,15 +147,14 @@ use LWP::UserAgent;
 use LWP::Protocol::https;
 use HTTP::Request::Common;
 
-use constant CTAN_URL => 'http://localhost:8080/submit/';
-
-use constant UPLOAD_URL   => CTAN_URL . 'upload';
-use constant VALIDATE_URL => CTAN_URL . 'validate';
-use constant FIELDS_URL   => CTAN_URL . 'fields';
+use constant VERSION => '1.0';
 
 use constant NEW_CONFIG => 0;
 use constant UPLOAD     => 1;
 use constant VALIDATE   => 2;
+use constant INCREMENT  => 3;
+
+my $CTAN_URL = 'http://localhost:8080/submit/';
 
 #------------------------------------------------------------------------------
 # Function:	usage
@@ -196,10 +200,10 @@ my $config = undef;
 my %fields = ();
 
 #------------------------------------------------------------------------------
-# Variable:	%parameter
-# Description:
+# Variable:	@parameter
+# Description:	The list of fields
 #
-my %parameter = ();
+my @parameter = ();
 
 use Getopt::Long;
 GetOptions(
@@ -208,26 +212,33 @@ GetOptions(
 	"package=s"  => \$config,
 	"debug"      => \$debug,
 	"h|help"     => \&usage,
+	"increment"  => sub { $method = INCREMENT },
 	"init"       => sub { $method = NEW_CONFIG },
 	"n|noaction" => sub { $method = VALIDATE; },
 	"submit"     => sub { $method = UPLOAD; },
 	"v|verbose"  => \$verbose,
+	"version"    => sub { print STDOUT VERSION,"\n"; exit(0); },
 	"validate"   => sub { $method = VALIDATE; },
 );
+
+my $UPLOAD_URL   = $CTAN_URL . 'upload';
+my $VALIDATE_URL = $CTAN_URL . 'validate';
+my $FIELDS_URL   = $CTAN_URL . 'fields';
 
 $config = $ARGV[0] if defined $ARGV[0];
 if ( not defined $config ) {
 	$config = cwd();
 	$config =~ s|.*[/\\]||;
-	$config = $config . '.cfg';
+	$config = $config . '.pkg';
 }
 
 fields();
 
 if ( $method == NEW_CONFIG ) {
 	new_config();
-}
-else {
+} elsif ( $method == INCREMENT ) {
+	increment_config();
+} else {
 	upload( read_config() );
 }
 
@@ -240,8 +251,8 @@ sub upload {
 	my $f = shift;
 
 	print STDERR "Uploading to CTAN..." if $verbose;
-	my $service_url = UPLOAD_URL;
-	$service_url = VALIDATE_URL if $method == VALIDATE;
+	my $service_url = $UPLOAD_URL;
+	$service_url = $VALIDATE_URL if $method == VALIDATE;
 	my $ua      = LWP::UserAgent->new();
 	my $request = POST $service_url,
 	  Content_Type => 'multipart/form-data',
@@ -293,11 +304,11 @@ sub format_errors {
 #
 sub fields {
 	print STDERR "Retrieving fields from CTAN..." if $verbose;
-	print STDERR FIELDS_URL if $debug;
+	print STDERR $FIELDS_URL if $debug;
 	my $response;
 	eval {
 		my $ua      = LWP::UserAgent->new();
-		my $request = GET FIELDS_URL;
+		my $request = GET $FIELDS_URL;
 		print STDERR "done\n" if $verbose;
 		$response = $ua->request($request);
 	};
@@ -319,6 +330,7 @@ sub fields {
 			$a{$1} =~ s/(^"|"$)//g;
 		}
 		$fields{$f} = \%a;
+		push @parameter, $f;
 	}
 }
 
@@ -382,6 +394,42 @@ sub read_config {
 }
 
 #------------------------------------------------------------------------------
+# Function:	increment_config
+# Arguments:	none
+# Description:
+#
+sub increment_config {
+	
+	my $modified = undef;
+	my $fd  = new FileHandle($config)
+	  || die "*** Configuration file `$config' could not be read.\n";
+	local $_;
+	my $content = '';
+	
+	while (<$fd>) {
+		if (m/^[ \t]*%/) {
+			$content .= $_;
+			next;
+		}
+		if (m/\\version{([^}]*[^}0-9]*)([0-9]+)}/) {
+			$content .= $` . "\\version{$1" . ($2 + 1) . "}" . $';
+			$modified = 1;
+			next;
+		} else {
+			$content .= $_;
+		}
+	}
+	$fd->close();
+	
+	if ($modified) {
+		rename $config, $config.'.bak';
+		$fd  = new FileHandle($config,'w');
+		print $fd $content;
+		$fd->close();
+	}
+}
+
+#------------------------------------------------------------------------------
 # Function:	new_config
 # Arguments:	none
 # Description:
@@ -404,7 +452,7 @@ sub new_config {
 % named type.
 __EOF__
 	local $_;
-	foreach ( keys(%fields) ) {
+	foreach ( @parameter ) {
 		print <<__EOF__;
 % -------------------------------------------------------------------------
 % This field contains the $fields{$_}->{'text'}.
@@ -429,7 +477,8 @@ __EOF__
 		if ( defined $fields{$_}->{'list'} ) {
 			print "% Multiple values are allowed.\n\\$_\{}\n";
 		}
-		elsif ( $fields{$_}->{'maxsize'} ne 'null'
+		elsif ( defined $fields{$_}->{'maxsize'}
+		    and $fields{$_}->{'maxsize'} ne 'null'
 			and $fields{$_}->{'maxsize'} < 256 )
 		{
 			print "\\$_\{}\n";

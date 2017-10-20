@@ -1,10 +1,4 @@
-# ctan-o-mat
-
-Scripted upload of a package to CTAN
-
-## NAME
-
-*ctan-o-mat* - Upload or validate a package for CTAN
+# ctan-o-mat - Upload or validate a package for CTAN
 
 ## SYNOPSIS
 
@@ -16,7 +10,8 @@ ctan-o-mat [options] [<package configuration>]
 
 This program can be used to automate the upload of a package to CTAN
 (https://www.ctan.org). The description of the package is contained in
-a configuration file.
+a configuration file. Thus it can be updated easily without the need
+to fill a Web form with the same old information.
 
 The provided information is validated in any case. If the validation
 succeeds and not only the validation is requested then the provided
@@ -36,7 +31,7 @@ from the server.
 ## CONFIGURATION
 
 The default configuration is read from a file with the same name as
-the current directory an the extension `.cfg`. This file name can be
+the current directory an the extension `.pkg`. This file name can be
 overwritten on the command line.
 
 The configuration depends on the features supported by the CTAN server.
@@ -81,6 +76,11 @@ configuration via the command line parameter `-init`.
     Print some more information during the processing (verbose mode).
   </dd>
 
+  <dt><code>--version</code></dt>
+  <dd>
+    Print the version number of this program and exit.
+  </dd>
+
   <dt><code>--validate</code></dt>
   <dd>
     Print some additional debugging information.
@@ -88,8 +88,8 @@ configuration via the command line parameter `-init`.
 
   <dt>&lt;package&gt;</dt>
   <dd>
-    This parameter is the name of a package configuration (see section
-    CONFIUGURATION) contained in a file.
+    This parameter is the name of a package configuration
+    (see section CONFIGURATION) contained in a file.
   </dd>
 </dl>
 
@@ -113,7 +113,9 @@ under the name `perl` on the program path.
 
 ### PREREQUISITE: LWP
 
-*ctan-o-mat* uses the LWP bundle to connect to the remote server and such. Thus it has to be installed. With the help of Per you can install it with the following command line: 
+*ctan-o-mat* uses the LWP bundle to connect to the remote server and such.
+Thus it has to be installed. With the help of Perl you can install it with
+the following command line: 
 
 ```
 perl -MCPAN -e 'install Bundle::LWP'
