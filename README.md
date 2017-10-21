@@ -8,10 +8,11 @@ ctan-o-mat [options] [<package configuration>]
 
 ## DESCRIPTION
 
-This program can be used to automate the upload of a package to CTAN
-(https://www.ctan.org). The description of the package is contained in
-a configuration file. Thus it can be updated easily without the need
-to fill a Web form with the same old information.
+This program can be used to automate the upload of a package to the
+TeX Archive Network (https://www.ctan.org). The description of the
+package is contained in a configuration file. Thus it can be updated
+easily without the need to fill a Web form with the same old
+information again and again.
 
 The provided information is validated in any case. If the validation
 succeeds and not only the validation is requested then the provided

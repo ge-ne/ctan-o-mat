@@ -26,10 +26,10 @@ ctan-o-mat [options] [<package configuration>]
 
 =head1 DESCRIPTION
 
-This program can be used to automate the upload of a package to CTAN
-(https://www.ctan.org). The description of the package is contained in
-a configuration file. Thus it can be updated easily without the need
-to fill a Web form with the same old information.
+This program can be used to automate the upload of a package to TeX Archive
+Network (https://www.ctan.org). The description of the package is contained
+in a configuration file. Thus it can be updated easily without the need
+to fill a Web form with the same old information again and again.
 
 The provided information is validated in any case. If the validation
 succeeds and not only the validation is requested then the provided
@@ -154,7 +154,8 @@ use constant UPLOAD     => 1;
 use constant VALIDATE   => 2;
 use constant INCREMENT  => 3;
 
-my $CTAN_URL = 'http://localhost:8080/submit/';
+my $CTAN_URL = $ENV{'CTAN_O_MAT_SERVER'};
+$CTAN_URL = 'http://localhost:8080/submit/' if not defined $CTAN_URL;
 
 #------------------------------------------------------------------------------
 # Function:	usage
@@ -217,8 +218,8 @@ GetOptions(
 	"n|noaction" => sub { $method = VALIDATE; },
 	"submit"     => sub { $method = UPLOAD; },
 	"v|verbose"  => \$verbose,
-	"version"    => sub { print STDOUT VERSION,"\n"; exit(0); },
-	"validate"   => sub { $method = VALIDATE; },
+	"version"    => sub { print STDOUT VERSION, "\n"; exit(0); },
+	"validate" => sub { $method = VALIDATE; },
 );
 
 my $UPLOAD_URL   = $CTAN_URL . 'upload';
@@ -236,9 +237,11 @@ fields();
 
 if ( $method == NEW_CONFIG ) {
 	new_config();
-} elsif ( $method == INCREMENT ) {
+}
+elsif ( $method == INCREMENT ) {
 	increment_config();
-} else {
+}
+else {
 	upload( read_config() );
 }
 
@@ -267,7 +270,7 @@ sub upload {
 		print "ok\n";
 	}
 	else {
-		print format_errors( $response->decoded_content, 'ok' ), "\n"
+		print format_errors( $response->decoded_content, 'ok' ), "\n";
 	}
 }
 
@@ -359,7 +362,8 @@ sub read_config {
 				while ( not m/\\end\{$tag\}/ ) {
 					$val .= $_;
 					$_ = <$fd>;
-					die "$config: unexpected end of file while searching end of $tag\n"
+					die
+"$config: unexpected end of file while searching end of $tag\n"
 					  if not defined $_;
 				}
 				m/\\end\{$tag\}/;
@@ -399,31 +403,32 @@ sub read_config {
 # Description:
 #
 sub increment_config {
-	
+
 	my $modified = undef;
-	my $fd  = new FileHandle($config)
+	my $fd       = new FileHandle($config)
 	  || die "*** Configuration file `$config' could not be read.\n";
 	local $_;
 	my $content = '';
-	
+
 	while (<$fd>) {
 		if (m/^[ \t]*%/) {
 			$content .= $_;
 			next;
 		}
 		if (m/\\version{([^}]*[^}0-9]*)([0-9]+)}/) {
-			$content .= $` . "\\version{$1" . ($2 + 1) . "}" . $';
+			$content .= $` . "\\version{$1" . ( $2 + 1 ) . "}" . $';
 			$modified = 1;
 			next;
-		} else {
+		}
+		else {
 			$content .= $_;
 		}
 	}
 	$fd->close();
-	
+
 	if ($modified) {
-		rename $config, $config.'.bak';
-		$fd  = new FileHandle($config,'w');
+		rename $config, $config . '.bak';
+		$fd = new FileHandle( $config, 'w' );
 		print $fd $content;
 		$fd->close();
 	}
@@ -452,7 +457,7 @@ sub new_config {
 % named type.
 __EOF__
 	local $_;
-	foreach ( @parameter ) {
+	foreach (@parameter) {
 		print <<__EOF__;
 % -------------------------------------------------------------------------
 % This field contains the $fields{$_}->{'text'}.
@@ -472,13 +477,14 @@ __EOF__
 			print "% It may have a relative or absolute directory.\n";
 		}
 		if ( defined $fields{$_}->{'maxsize'} ) {
-			print "% The value is restricted to $fields{$_}->{'maxsize'} characters.\n";
+			print
+"% The value is restricted to $fields{$_}->{'maxsize'} characters.\n";
 		}
 		if ( defined $fields{$_}->{'list'} ) {
 			print "% Multiple values are allowed.\n\\$_\{}\n";
 		}
 		elsif ( defined $fields{$_}->{'maxsize'}
-		    and $fields{$_}->{'maxsize'} ne 'null'
+			and $fields{$_}->{'maxsize'} ne 'null'
 			and $fields{$_}->{'maxsize'} < 256 )
 		{
 			print "\\$_\{}\n";
