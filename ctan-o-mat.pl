@@ -18,7 +18,7 @@
 
 =head1 NAME
 
-ctan-o-mat - Upload or validate a package for CTAN
+ctan-o-mat - Validate and upload a package for CTAN
 
 =head1 SYNOPSIS
 
@@ -53,10 +53,11 @@ The default configuration is read from a file with the same name as
 the current directory an the extension .pkg. This file name can be
 overwritten on the command line.
 
-The configuration depends on the features supported by the CTAN server.
+The configuration depends on the features currently supported by the
+CTAN server.
 Since these features can change over time the configuration is not
-hard-coded in B<ctan-o-mat>. You can request a template of the
-configuration via the command line parameter C<-init>.
+hard-coded in B<ctan-o-mat>. You can request an empty template of the
+configuration via the command line parameter C<--init>.
 
 
 =head1 OPTIONS
@@ -69,20 +70,19 @@ configuration via the command line parameter C<-init>.
 
 Print this short summary about the usage and exit the program.
 
-=item --validate
-
-=item -n
-
-=item --noaction
-
-Do not perform the final upload. The package is validated and the
-resulting messages are printed. 
-
 =item -i
 
 =item --init
 
 Create an empty template for a configuration.
+
+=item --config <package configuration>
+
+=item --pkg <package configuration>
+
+=item --package <package configuration>
+
+Set the package configuration file.
 
 =item -s
 
@@ -103,12 +103,19 @@ Print the version number of this program and exit.
 
 =item --validate
 
-Print some additional debugging information.
+=item -n
+
+=item --noaction
+
+Do not perform the final upload. The package is validated and the
+resulting messages are printed. 
 
 =item <package>
 
 This parameter is the name of a package configuration
 (see section CONFIGURATION) contained in a file.
+If not set otherwise the package configuration defaults to the
+name of the current directory with C<.pkg> appended.
 
 =back
 
@@ -155,13 +162,14 @@ use constant UPLOAD     => 1;
 use constant VALIDATE   => 2;
 use constant INCREMENT  => 3;
 
-my $CTAN_URL = $ENV{'CTAN_O_MAT_SERVER'};
-$CTAN_URL = 'http://localhost:8080/submit/' if not defined $CTAN_URL;
+my $CTAN_URL = $ENV{'CTAN_O_MAT_URL'};
+$CTAN_URL = 'https://ctan.org/submit' if not defined $CTAN_URL;
+$CTAN_URL .= '/' if not $CTAN_URL =~ m/\/$/;
 
 #------------------------------------------------------------------------------
-# Function:	usage
+# Function:		usage
 # Arguments:	none
-# Returns:	nothing
+# Returns:		nothing
 # Description:	Print the POD to stderr and exit
 #
 sub usage {
@@ -172,37 +180,37 @@ sub usage {
 }
 
 #------------------------------------------------------------------------------
-# Variable:	$verbose
+# Variable:		$verbose
 # Description:	The verbosity indicator.
 #
 my $verbose = 0;
 
 #------------------------------------------------------------------------------
-# Variable:	$method
+# Variable:		$method
 # Description:	The validation or submit indicator.
 #
 my $method = VALIDATE;
 
 #------------------------------------------------------------------------------
-# Variable:	$debug
+# Variable:		$debug
 # Description:	The debug indicator.
 #
 my $debug = 0;
 
 #------------------------------------------------------------------------------
-# Variable:	$config
+# Variable:		$config
 # Description:	The name of the configuration file.
 #
 my $config = undef;
 
 #------------------------------------------------------------------------------
-# Variable:	@fields
+# Variable:		@fields
 # Description: The constraints for the known fields.
 #
 my %fields = ();
 
 #------------------------------------------------------------------------------
-# Variable:	@parameter
+# Variable:		@parameter
 # Description:	The list of fields.
 #
 my @parameter = ();
@@ -247,9 +255,9 @@ else {
 }
 
 #------------------------------------------------------------------------------
-# Function:	upload
+# Function:		upload
 # Arguments:	none
-# Description:
+# Description:	Connect to the CTAN server to upload or validate the package.
 #
 sub upload {
 	my $f = shift;
@@ -276,11 +284,11 @@ sub upload {
 }
 
 #------------------------------------------------------------------------------
-# Function:	format_errors
+# Function:		format_errors
 # Arguments:
 #	$json		the JSON list with the messages
 #   $fallback	the fallback message if the first parameter is empty
-# Description:
+# Description:	
 #
 sub format_errors {
 	local $_ = shift;
@@ -301,9 +309,10 @@ sub format_errors {
 }
 
 #------------------------------------------------------------------------------
-# Function:	fields
+# Function:		fields
 # Arguments:	none
-# Description:
+# Description:	Retrieve a list of currently supported fields from the
+#				CTAN server.
 #
 sub fields {
 	print STDERR "Retrieving fields from CTAN..." if $verbose;
@@ -338,9 +347,11 @@ sub fields {
 }
 
 #------------------------------------------------------------------------------
-# Function:	read_config
-# Arguments:
+# Function:		read_config
+# Arguments:	none
 # Description:
+#	This function parses a configuration file in (La)TeX form and returns
+#   it as hash.
 #
 sub read_config {
 	my %cfg = ();
@@ -399,7 +410,7 @@ sub read_config {
 }
 
 #------------------------------------------------------------------------------
-# Function:	increment_config
+# Function:		increment_config
 # Arguments:	none
 # Description:
 #
@@ -436,9 +447,9 @@ sub increment_config {
 }
 
 #------------------------------------------------------------------------------
-# Function:	new_config
+# Function:		new_config
 # Arguments:	none
-# Description:
+# Description:	Write a new configuration to stdout.
 #
 sub new_config {
 

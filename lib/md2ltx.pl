@@ -55,7 +55,6 @@ my $body = '';
 my $author = '';
 my $title = '';
 
-
 while(<>) {
 	if (m/## AUTHOR/) {
 		$mode = MODE_AUTHOR;
@@ -81,6 +80,10 @@ while(<>) {
 		}
 		next
 	}
+	if ($mode == MODE_PRE) {
+		$body .= $_;
+		next;
+	}
 	$_ = "\\subsection*{".ucfirst(lc($1))."}\\label{$1}" if m/^### (.*)/;
 	$_ = "\\section*{".ucfirst(lc($1))."}\\label{$1}" if m/^## (.*)/;
 	if (m/^# (.*)/) {
@@ -102,11 +105,12 @@ while(<>) {
 	s/<\/dt>/]/;
 	s/<dd>/\\ \\\\/;
 	s/ - / -- /;
-	s/TeX /\	\TeX{} /;
-	s/&gt;/\\(>\\)/;
-	s/&lt;/\\(<\\)/;
+	s/TeX /\\TeX{} /;
+	s/(&gt;|>)/\$>\$/;
+	s/(&lt;|<)/\$<\$/;
 	s/_/\\_/g;
 	s|https?://[.a-z\/]*|\\url{$&}|;
+	s|mailto:([\@a-z-]*)|\\href{$&}{$1}|;
 	$body .= $_;
 }
 
@@ -116,14 +120,18 @@ if ($title =~ m/ +-+ +/) {
 	$title = $`;
 	$subject = $';
 }
-if ($author =~ m/\[([a-z0-9.,:; ]*)\]\(([^()]*)\)/i) {
+if ($author =~ m/\[([a-z0-9.,:; ]*)\]\(mailto:([^()]*)\)/i) {
+	$author = $1;
+	$author_long = "$1 (\\href{mailto:$2}{$2})";
+} elsif ($author =~ m/\[([a-z0-9.,:; ]*)\]\(([^()]*)\)/i) {
 	$author = $1;
 	$author_long = "$1 ($2)";
 }
 
+
 print <<__EOF__;
 \\documentclass[a4paper,12pt]{scrartcl}
-\\usepackage[urlcolor=blue,urlbordercolor={.85 .85 1}]{hyperref}
+\\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
 \\date{}
 \\hypersetup{
     pdfinfo={
@@ -134,7 +142,8 @@ print <<__EOF__;
 }
 
 \\author{$author_long}
-\\title{$title\\thanks{This document describes \textbf{$title} version $version}\\\\$subject}
+\\title{$title\\thanks{This document describes \\textbf{$title} version $version}}
+\\subtitle{$subject}
 \\begin{document}
 \\maketitle
 
