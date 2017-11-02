@@ -92,6 +92,20 @@ configuration via the command line parameter `--init`.
   </dd>
 </dl>
 
+## ENVIRONMENT
+
+The following environment variables are recognized by B<ctan-o-mat>.
+
+<dl>
+  <dt>CTAN_O_MAT_URL<dt>
+  <dd>
+    The value is the URL prefix for the CTAN server to be contacted. The
+    default is `https://ctan.org/submit`. The complete URL is constructed
+    by appending `validate`, `upload`, or `fields` to use the respective
+    CTAN REST API.
+  </dd>
+</dl>
+
 ## CONNECTING VIA PROXIES
 
 If you need to connect to the Internet via a proxy then this can be

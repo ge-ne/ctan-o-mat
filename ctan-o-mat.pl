@@ -119,6 +119,22 @@ name of the current directory with C<.pkg> appended.
 
 =back
 
+
+=head1 ENVIRONMENT
+
+The following environment variables are recognized by B<ctan-o-mat>.
+
+=over 4
+
+=item CTAN_O_MAT_URL
+
+The value is the URL prefix for the CTAN server to be contacted. The default
+is C<https://ctan.org/submit>. The complete URL is constructed by appending
+C<validate>, C<upload>, or C<fields> to use the respective CTAN REST API.
+
+=back
+
+
 =head1 CONNECTING VIA PROXIES
 
 If you need to connect to the Internet via a proxy then this can be achieved
@@ -217,18 +233,18 @@ my @parameter = ();
 
 use Getopt::Long;
 GetOptions(
-	"config=s"   => \$config,
-	"pkg=s"      => \$config,
-	"package=s"  => \$config,
-	"debug"      => \$debug,
-	"h|help"     => \&usage,
-	"increment"  => sub { $method = INCREMENT },
-	"init"       => sub { $method = NEW_CONFIG },
-	"n|noaction" => sub { $method = VALIDATE; },
-	"submit"     => sub { $method = UPLOAD; },
-	"v|verbose"  => \$verbose,
-	"version"    => sub { print STDOUT VERSION, "\n"; exit(0); },
-	"validate" => sub { $method = VALIDATE; },
+	"config=s"      => \$config,
+	"pkg=s"         => \$config,
+	"package=s"     => \$config,
+	"debug"         => \$debug,
+	"h|help"        => \&usage,
+	"increment"     => sub { $method = INCREMENT },
+	"init"          => sub { $method = NEW_CONFIG },
+	"n|noaction"    => sub { $method = VALIDATE; },
+	"submit|upload" => sub { $method = UPLOAD; },
+	"v|verbose"     => \$verbose,
+	"validate"      => sub { $method = VALIDATE; },
+	"version"       => sub { print STDOUT VERSION, "\n"; exit(0); },
 );
 
 my $UPLOAD_URL   = $CTAN_URL . 'upload';
@@ -288,12 +304,15 @@ sub upload {
 # Arguments:
 #	$json		the JSON list with the messages
 #   $fallback	the fallback message if the first parameter is empty
-# Description:	
+# Description:
 #
 sub format_errors {
 	local $_ = shift;
 	if ( $_ eq '' ) {
 		return shift;
+	}
+	if (m/^(<!DOCTYPE html>|<html)/i) {
+		return "Unexpected HTML response found under $CTAN_URL";
 	}
 	s/^\[*\"//g;
 	s/\]$//g;
