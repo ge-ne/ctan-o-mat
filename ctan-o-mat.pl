@@ -276,14 +276,14 @@ else {
 # Description:	Connect to the CTAN server to upload or validate the package.
 #
 sub upload {
-	my $f = shift;
+	my $cfg = shift;
 	print STDERR "Uploading to CTAN..." if $verbose;
 	my $service_url = $UPLOAD_URL;
 	$service_url = $VALIDATE_URL if $method == VALIDATE;
 	my $ua      = LWP::UserAgent->new();
 	my $request = POST $service_url,
 	  Content_Type => 'multipart/form-data',
-	  Content      => $f;
+	  Content      => $cfg;
 
 	print STDERR "done\n" if $verbose;
 	my $response = $ua->request($request);
@@ -448,7 +448,7 @@ sub fields {
 #   it as hash.
 #
 sub read_config {
-	my %cfg = ();
+	my @cfg = ();
 	my $fd  = new FileHandle($config)
 	  || die "*** Configuration file `$config' could not be read.\n";
 	my $slurp = undef;
@@ -476,7 +476,7 @@ sub read_config {
 				$val .= $`;
 				$val =~ s/^[ \t\n\r]*//m;
 				$val =~ s/[ \t\n\r]*$//m;
-				$cfg{$tag} = $val;
+				push @cfg, $tag => $val;
 				$_ = $';
 			}
 			elsif ( $1 eq 'endinput' ) {
@@ -488,9 +488,9 @@ sub read_config {
 				  if not m/^[ \t]*\{([^{}]*)\}/i;
 
 				if ( $key eq 'file' ) {
-					$cfg{$key} = [$1];
+					push @cfg, $key => [$1];
 				}
-				else { $cfg{$key} = $1; }
+				else { push @cfg, $key => $1; }
 				$_ = $';
 			}
 			else {
@@ -500,7 +500,7 @@ sub read_config {
 		}
 	}
 	$fd->close();
-	return \%cfg;
+	return \@cfg;
 }
 
 #------------------------------------------------------------------------------
