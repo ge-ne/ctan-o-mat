@@ -284,6 +284,7 @@ sub upload {
 	my $request = POST $service_url,
 	  Content_Type => 'multipart/form-data',
 	  Content      => $f;
+
 	print STDERR "done\n" if $verbose;
 	my $response = $ua->request($request);
 
@@ -314,17 +315,91 @@ sub format_errors {
 	if (m/^(<!DOCTYPE html>|<html)/i) {
 		return "Unexpected HTML response found under $CTAN_URL";
 	}
-	s/^\[*\"//g;
-	s/\]$//g;
-	my @a = map {
-		s/^ERROR\",\"/*** ERROR: /g;
-		s/^WARNING\",\"/+++ WARNING: /g;
-		s/^INFO\",\"/--- INFO: /g;
-		s/\",\"/ /g;
-		s/\"\]$//g;
-		$_
-	} split /\"\],\[\"/;
-	return join( "\n", @a );
+	
+	my $json = parse_json($_);
+	return join("\n", map { join(': ', @$_ )} @$json);
+}
+
+#------------------------------------------------------------------------------
+# Function:		parse_json
+# Arguments:
+#	$json		the JSON list with the messages
+# Description:
+#
+sub parse_json {
+	local $_ = shift;
+	my ( $result, $remainder ) = scan_json($_);
+	chomp $remainder;
+	if ($remainder ne '' ) {
+		die "unprocessed JSON: $remainder\n";
+	}
+	return $result;
+}
+
+#------------------------------------------------------------------------------
+# Function:		scan_json
+# Arguments:
+#	$json		the JSON list with the messages
+# Description:
+#
+sub scan_json {
+	local $_;
+	my $json = shift;
+	$json =~ s/^\s+//;
+	if ($json =~ m/^\[\s*/) {
+		my @a = ();
+		$json = $';
+		while ( not $json =~ m/^\]/ ) {
+			my ($el, $remainder) = scan_json($json);
+			push @a, $el;
+			$json = $remainder;
+			if ($json =~ m/^\s*,/) {
+				$json = $';
+			}
+		}
+		$json = substr($json, 1);
+		return ( \@a, $json );
+	}
+	elsif ($json =~ m/^"/) {
+		$json = $';
+		my $s = '';
+		while ($json =~ m/(\\.|")/) {
+			$s .= $`;
+			$json = $';
+			if ( $& eq '"' ) {
+				return ($s, $json);
+			}
+			if ( $& eq '\\n' ) {
+				$s .= "\n";
+			}
+			elsif ( $& eq '\\"' ) {
+				$s .= '"';
+			}
+			elsif ( $& eq '\\t' ) {
+				$s .= "\t";
+			}
+			elsif ( $& eq '\\\\' ) {
+				$s .= "\\";
+			}
+			elsif ( $& eq '\\r' ) {
+				$s .= "\r";
+			}
+			elsif ( $& eq '\\b' ) {
+				$s .= "\b";
+			}
+			else {
+				$s .= "\\";
+			}
+		}
+		die "missing end of string\n";
+	}
+	elsif ($json =~ m/^([0-9]+|[a-z]+)/i) {
+		$json = $';
+		$_ = $&;
+		return ( $_, $json );
+	}
+
+	die "Parse error at: $json\n";
 }
 
 #------------------------------------------------------------------------------
@@ -385,7 +460,7 @@ sub read_config {
 		while (m/\\([a-z]+)/i) {
 			$_ = $';
 			if ( $1 eq 'begin' ) {
-				die "$config: missing {environment} instead of $_\n"
+				die "$config $.: missing {environment} instead of $_\n"
 				  if not m/^[ \t]*\{([a-z]*)\}/i;
 				my $tag = $1;
 				my $val = '';
@@ -393,8 +468,8 @@ sub read_config {
 				while ( not m/\\end\{$tag\}/ ) {
 					$val .= $_;
 					$_ = <$fd>;
-					die
-"$config: unexpected end of file while searching end of $tag\n"
+					die "$config $.: "
+					  . "unexpected end of file while searching end of $tag\n"
 					  if not defined $_;
 				}
 				m/\\end\{$tag\}/;
@@ -409,7 +484,7 @@ sub read_config {
 			}
 			elsif ( defined $fields{$1} ) {
 				my $key = $1;
-				die "$config: missing {environment} instead of $_\n"
+				die "$config $.: missing {environment} instead of $_\n"
 				  if not m/^[ \t]*\{([^{}]*)\}/i;
 
 				if ( $key eq 'file' ) {
@@ -419,7 +494,7 @@ sub read_config {
 				$_ = $';
 			}
 			else {
-				die "$config: undefined keyword $&\n";
+				die "$config $.: undefined keyword $&\n";
 			}
 			s/^[ \t]*%.*//;
 		}
