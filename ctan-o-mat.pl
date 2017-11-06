@@ -445,7 +445,7 @@ sub fields {
 # Arguments:	none
 # Description:
 #	This function parses a configuration file in (La)TeX form and returns
-#   it as hash.
+#   it as hash-like list.
 #
 sub read_config {
 	my @cfg = ();
