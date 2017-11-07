@@ -173,14 +173,8 @@ use HTTP::Request::Common;
 
 use constant VERSION => '1.0';
 
-use constant NEW_CONFIG => 0;
 use constant UPLOAD     => 1;
 use constant VALIDATE   => 2;
-use constant INCREMENT  => 3;
-
-my $CTAN_URL = $ENV{'CTAN_O_MAT_URL'};
-$CTAN_URL = 'https://ctan.org/submit' if not defined $CTAN_URL;
-$CTAN_URL .= '/' if not $CTAN_URL =~ m/\/$/;
 
 #------------------------------------------------------------------------------
 # Function:		usage
@@ -221,9 +215,21 @@ my $config = undef;
 
 #------------------------------------------------------------------------------
 # Variable:		@fields
-# Description: The constraints for the known fields.
+# Description:  The constraints for the known fields.
 #
 my %fields = ();
+
+#------------------------------------------------------------------------------
+# Variable:		$CTAN_URL
+# Description:  ...
+#
+my $CTAN_URL = $ENV{'CTAN_O_MAT_URL'};
+$CTAN_URL = 'https://ctan.org/submit' if not defined $CTAN_URL;
+$CTAN_URL .= '/' if not $CTAN_URL =~ m/\/$/;
+
+my $UPLOAD_URL   = $CTAN_URL . 'upload';
+my $VALIDATE_URL = $CTAN_URL . 'validate';
+my $FIELDS_URL   = $CTAN_URL . 'fields';
 
 #------------------------------------------------------------------------------
 # Variable:		@parameter
@@ -238,18 +244,14 @@ GetOptions(
 	"package=s"     => \$config,
 	"debug"         => \$debug,
 	"h|help"        => \&usage,
-	"increment"     => sub { $method = INCREMENT },
-	"init"          => sub { $method = NEW_CONFIG },
+	"increment"     => sub { increment_config(); exit(0); },
+	"i|init:s"      => sub { fields(); new_config(pkg => $_[1]); exit(0); },
 	"n|noaction"    => sub { $method = VALIDATE; },
 	"submit|upload" => sub { $method = UPLOAD; },
 	"v|verbose"     => \$verbose,
 	"validate"      => sub { $method = VALIDATE; },
 	"version"       => sub { print STDOUT VERSION, "\n"; exit(0); },
 );
-
-my $UPLOAD_URL   = $CTAN_URL . 'upload';
-my $VALIDATE_URL = $CTAN_URL . 'validate';
-my $FIELDS_URL   = $CTAN_URL . 'fields';
 
 $config = $ARGV[0] if defined $ARGV[0];
 if ( not defined $config ) {
@@ -259,16 +261,7 @@ if ( not defined $config ) {
 }
 
 fields();
-
-if ( $method == NEW_CONFIG ) {
-	new_config();
-}
-elsif ( $method == INCREMENT ) {
-	increment_config();
-}
-else {
-	upload( read_config() );
-}
+upload( read_config() );
 
 #------------------------------------------------------------------------------
 # Function:		upload
@@ -451,7 +444,6 @@ sub read_config {
 	my @cfg = ();
 	my $fd  = new FileHandle($config)
 	  || die "*** Configuration file `$config' could not be read.\n";
-	my $slurp = undef;
 	local $_;
 
 	while (<$fd>) {
@@ -546,6 +538,7 @@ sub increment_config {
 # Description:	Write a new configuration to stdout.
 #
 sub new_config {
+	my %values = @_;
 
 	print <<__EOF__;
 % This is a description file for ctan-o-mat.
@@ -592,11 +585,19 @@ __EOF__
 		elsif ( defined $fields{$_}->{'maxsize'}
 			and $fields{$_}->{'maxsize'} ne 'null'
 			and $fields{$_}->{'maxsize'} < 256 )
-		{
-			print "\\$_\{}\n";
+		{   my $v = $values{$_};
+			$v = ''  if not defined $v;
+			print "\\$_\{$v\}\n";
 		}
 		else {
-			print "\\begin{$_}\\end{$_}\n";
+			my $v = $values{$_};
+			if (defined $v) {
+				$v = "\n  " + $v + "\n";
+			} else {
+				$v = '';
+			}
+			
+			print "\\begin{$_}$v\\end{$_}\n";
 		}
 	}
 }
