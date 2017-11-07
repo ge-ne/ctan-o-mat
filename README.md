@@ -97,7 +97,7 @@ configuration via the command line parameter `--init`.
 The following environment variables are recognized by B<ctan-o-mat>.
 
 <dl>
-  <dt>CTAN_O_MAT_URL<dt>
+  <dt>CTAN_O_MAT_URL</dt>
   <dd>
     The value is the URL prefix for the CTAN server to be contacted. The
     default is `https://ctan.org/submit`. The complete URL is constructed
@@ -158,6 +158,12 @@ make ctan-o-mat.pdf
 
 It requires Perl and a TeX distribution to be installed and on the
 path.
+
+
+## REPOSITORY
+
+*ctan-o-mat* lives in a public repository at GitHub. It can be found under the
+URL https://github.com/ge-ne/ctan-o-mat.
 
 
 ## AUTHOR
