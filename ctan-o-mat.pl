@@ -292,7 +292,7 @@ sub new
 sub load {
 	my $this = shift;
 	print STDERR "Retrieving fields from CTAN..." if $::verbose;
-	print STDERR $FIELDS_URL if $debug;
+	print STDERR $FIELDS_URL,"\n" if $debug;
 	my $response;
 	eval {
 		my $ua      = LWP::UserAgent->new();
