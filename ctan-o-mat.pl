@@ -189,16 +189,16 @@ sub usage {
 my $verbose = 0;
 
 #------------------------------------------------------------------------------
-# Variable:		$submit
-# Description:	The validation or submit indicator.
-#
-my $submit = undef;
-
-#------------------------------------------------------------------------------
 # Variable:		$debug
 # Description:	The debug indicator.
 #
 my $debug = 0;
+
+#------------------------------------------------------------------------------
+# Variable:		$submit
+# Description:	The validation or submit indicator.
+#
+my $submit = undef;
 
 #------------------------------------------------------------------------------
 # Variable:		$cfg
@@ -208,15 +208,10 @@ my $cfg = undef;
 
 #------------------------------------------------------------------------------
 # Variable:		$CTAN_URL
-# Description:  ...
+# Description:  The base URL for requesting information from the CTAN server.
 #
-my $CTAN_URL = $ENV{'CTAN_O_MAT_URL'};
-$CTAN_URL = 'https://ctan.org/submit' if not defined $CTAN_URL;
+my $CTAN_URL = $ENV{'CTAN_O_MAT_URL'} || 'https://ctan.org';
 $CTAN_URL .= '/' if not $CTAN_URL =~ m/\/$/;
-
-my $UPLOAD_URL   = $CTAN_URL . 'upload';
-my $VALIDATE_URL = $CTAN_URL . 'validate';
-my $FIELDS_URL   = $CTAN_URL . 'fields';
 
 use Getopt::Long;
 GetOptions(
@@ -227,7 +222,8 @@ GetOptions(
 	"h|help"        => \&usage,
 	"i|init:s"      => sub { local $_ = pkg_name_or_fallback($_[1], '');
 							 (new CTAN::Pkg())
-								->write(new CTAN::Upload::Fields(), pkg => $_);
+							 	->add(pkg => $_)
+								->write(new CTAN::Upload::Fields());
 							 exit(0);
 						   },
 	"n|noaction"    => sub { $submit = undef; },
@@ -246,7 +242,8 @@ GetOptions(
 # Function:		pkg_name_or_fallback
 # Arguments:	$value the value
 #				$ext the extension to append
-# Description:	...
+# Description:	Construct a fallback from the current directory if $value is
+#				not defined.
 #
 sub pkg_name_or_fallback {
 	my ($value, $ext) =  @_;
@@ -291,12 +288,14 @@ sub new
 #
 sub load {
 	my $this = shift;
+	my $url = $CTAN_URL . 'submit/fields';
+	
 	print STDERR "Retrieving fields from CTAN..." if $::verbose;
-	print STDERR $FIELDS_URL,"\n" if $debug;
+	print STDERR $url,"\n" if $debug;
 	my $response;
 	eval {
 		my $ua      = LWP::UserAgent->new();
-		my $request = GET $FIELDS_URL;
+		my $request = GET $url;
 		print STDERR "done\n" if $::verbose;
 		$response = $ua->request($request);
 	};
@@ -367,8 +366,27 @@ sub new
 }
 
 #------------------------------------------------------------------------------
+# Method:		add
+# Arguments:	...
+# Description:
+#	This function adds a key/value pair to the object.
+#
+sub add {
+	my $this = shift;
+	my ($key, $val);
+	$key = shift;
+	$val = shift;
+	while (defined $key and defined $val) {
+		push @$this, $key => $val;
+		$key = shift;
+		$val = shift;
+	}
+	return $this;
+}
+
+#------------------------------------------------------------------------------
 # Method:		read
-# Arguments:	none
+# Arguments:	$file the file name to be read
 # Description:
 #	This function parses a configuration file in (La)TeX form and returns
 #   it as hash-like list.
@@ -388,7 +406,7 @@ sub read {
 		while (m/\\([a-z]+)/i) {
 			$_ = $';
 			if ( $1 eq 'begin' ) {
-				die "$file $.: missing {environment} instead of $_\n"
+				die "$file:$.: missing {environment} instead of $_\n"
 				  if not m/^[ \t]*\{([a-z]*)\}/i;
 				my $tag = $1;
 				my $val = '';
@@ -396,7 +414,7 @@ sub read {
 				while ( not m/\\end\{$tag\}/ ) {
 					$val .= $_;
 					$_ = <$fd>;
-					die "$file $.: "
+					die "$file:$.: "
 					  . "unexpected end of file while searching end of $tag\n"
 					  if not defined $_;
 				}
@@ -412,7 +430,7 @@ sub read {
 			}
 			elsif ( defined $fields->{$1} ) {
 				my $key = $1;
-				die "$file $.: missing {environment} instead of $_\n"
+				die "$file:$.: missing {environment} instead of $_\n"
 				  if not m/^[ \t]*\{([^{}]*)\}/i;
 
 				if ( $key eq 'file' ) {	push @$this, $key => [$1];
@@ -420,7 +438,7 @@ sub read {
 				$_ = $';
 			}
 			else {
-				die "$file $.: undefined keyword $&\n";
+				die "$file:$.: undefined keyword $&\n";
 			}
 			s/^[ \t]*%.*//;
 		}
@@ -437,9 +455,14 @@ sub read {
 sub upload {
 	my $this = shift;
 	my $submit = shift;
+
 	print STDERR "Uploading to CTAN..." if $verbose;
-	my $service_url = $UPLOAD_URL;
-	$service_url = $VALIDATE_URL if not $submit;
+	my $service_url;
+	if ($submit) {
+		$service_url = $CTAN_URL . 'submit/upload';
+	} else {
+		$service_url = $CTAN_URL . 'submit/validate';
+	}
 	my $ua      = LWP::UserAgent->new();
 	my $request = POST ($service_url,
 	  'Content_Type' => 'multipart/form-data',
@@ -470,8 +493,8 @@ sub upload {
 #
 sub write {
 	my $this = shift;
+	my %this = @$this;
 	my $fields = shift;
-	my %values = @_;
 
 	print <<__EOF__;
 % This is a description file for ctan-o-mat.
@@ -518,12 +541,12 @@ __EOF__
 		elsif ( defined $fields->{$_}->{'maxsize'}
 			and $fields->{$_}->{'maxsize'} ne 'null'
 			and $fields->{$_}->{'maxsize'} < 256 )
-		{   my $v = $values{$_};
+		{   my $v = $this{$_};
 			$v = ''  if not defined $v;
 			print "\\$_\{$v\}\n";
 		}
 		else {
-			my $v = $values{$_};
+			my $v = $this{$_};
 			if (defined $v) {
 				$v = "\n  " + $v + "\n";
 			} else {
@@ -536,8 +559,8 @@ __EOF__
 }
 
 ###############################################################################
-package JSON::Parser;
 
+package JSON::Parser;
 #------------------------------------------------------------------------------
 # Constructor:	new
 # Description:	This is the constructor
