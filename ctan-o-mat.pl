@@ -167,14 +167,7 @@ use FileHandle;
 use File::Basename;
 use Cwd;
 
-use LWP::UserAgent;
-use LWP::Protocol::https;
-use HTTP::Request::Common;
-
 use constant VERSION => '1.0';
-
-use constant UPLOAD     => 1;
-use constant VALIDATE   => 2;
 
 #------------------------------------------------------------------------------
 # Function:		usage
@@ -196,10 +189,10 @@ sub usage {
 my $verbose = 0;
 
 #------------------------------------------------------------------------------
-# Variable:		$method
+# Variable:		$submit
 # Description:	The validation or submit indicator.
 #
-my $method = VALIDATE;
+my $submit = undef;
 
 #------------------------------------------------------------------------------
 # Variable:		$debug
@@ -208,16 +201,10 @@ my $method = VALIDATE;
 my $debug = 0;
 
 #------------------------------------------------------------------------------
-# Variable:		$config
+# Variable:		$cfg
 # Description:	The name of the configuration file.
 #
-my $config = undef;
-
-#------------------------------------------------------------------------------
-# Variable:		@fields
-# Description:  The constraints for the known fields.
-#
-my %fields = ();
+my $cfg = undef;
 
 #------------------------------------------------------------------------------
 # Variable:		$CTAN_URL
@@ -231,76 +218,123 @@ my $UPLOAD_URL   = $CTAN_URL . 'upload';
 my $VALIDATE_URL = $CTAN_URL . 'validate';
 my $FIELDS_URL   = $CTAN_URL . 'fields';
 
+use Getopt::Long;
+GetOptions(
+	"config=s"      => \$cfg,
+	"pkg=s"         => \$cfg,
+	"package=s"     => \$cfg,
+	"debug"         => \$debug,
+	"h|help"        => \&usage,
+	"i|init:s"      => sub { local $_ = pkg_name_or_fallback($_[1], '');
+							 (new CTAN::Pkg())
+								->write(new CTAN::Upload::Fields(), pkg => $_);
+							 exit(0);
+						   },
+	"n|noaction"    => sub { $submit = undef; },
+	"submit|upload" => sub { $submit = 1; },
+	"v|verbose"     => \$verbose,
+	"validate"      => sub { $submit = undef; },
+	"version"       => sub { print STDOUT VERSION, "\n"; exit(0); },
+);
+
+(new CTAN::Pkg())
+	->read(pkg_name_or_fallback($ARGV[0] || $cfg, '.pkg'))
+	->upload($submit);
+
+
+#------------------------------------------------------------------------------
+# Function:		pkg_name_or_fallback
+# Arguments:	$value the value
+#				$ext the extension to append
+# Description:	...
+#
+sub pkg_name_or_fallback {
+	my ($value, $ext) =  @_;
+    if ( not defined $value or $value eq '') {
+		$value = cwd();
+		$value =~ s|.*[/\\]||;
+		$value = $value . $ext;
+	}
+	return $value;
+}
+
+###############################################################################
+package CTAN::Upload::Fields;
+
+use LWP::UserAgent;
+use LWP::Protocol::https;
+use HTTP::Request::Common;
+
 #------------------------------------------------------------------------------
 # Variable:		@parameter
 # Description:	The list of fields.
 #
 my @parameter = ();
 
-use Getopt::Long;
-GetOptions(
-	"config=s"      => \$config,
-	"pkg=s"         => \$config,
-	"package=s"     => \$config,
-	"debug"         => \$debug,
-	"h|help"        => \&usage,
-	"increment"     => sub { increment_config(); exit(0); },
-	"i|init:s"      => sub { fields(); new_config(pkg => $_[1]); exit(0); },
-	"n|noaction"    => sub { $method = VALIDATE; },
-	"submit|upload" => sub { $method = UPLOAD; },
-	"v|verbose"     => \$verbose,
-	"validate"      => sub { $method = VALIDATE; },
-	"version"       => sub { print STDOUT VERSION, "\n"; exit(0); },
-);
-
-$config = $ARGV[0] if defined $ARGV[0];
-if ( not defined $config ) {
-	$config = cwd();
-	$config =~ s|.*[/\\]||;
-	$config = $config . '.pkg';
+#------------------------------------------------------------------------------
+# Constructor:	new
+# Description:	This is the constructor
+#
+sub new
+{ my $proto = shift;
+  my $class = ref($proto) || $proto;
+  my $this  = {};
+  bless $this,$class;
+  return $this->load();
 }
 
-fields();
-upload( read_config() );
-
 #------------------------------------------------------------------------------
-# Function:		upload
+# Function:		load
 # Arguments:	none
-# Description:	Connect to the CTAN server to upload or validate the package.
+# Description:	Retrieve a list of currently supported fields from the
+#				CTAN server.
 #
-sub upload {
-	my $cfg = shift;
-	print STDERR "Uploading to CTAN..." if $verbose;
-	my $service_url = $UPLOAD_URL;
-	$service_url = $VALIDATE_URL if $method == VALIDATE;
-	my $ua      = LWP::UserAgent->new();
-	my $request = POST $service_url,
-	  Content_Type => 'multipart/form-data',
-	  Content      => $cfg;
+sub load {
+	my $this = shift;
+	print STDERR "Retrieving fields from CTAN..." if $::verbose;
+	print STDERR $FIELDS_URL if $debug;
+	my $response;
+	eval {
+		my $ua      = LWP::UserAgent->new();
+		my $request = GET $FIELDS_URL;
+		print STDERR "done\n" if $::verbose;
+		$response = $ua->request($request);
+	};
 
-	print STDERR "done\n" if $verbose;
-	my $response = $ua->request($request);
-
-	die format_errors( $response->decoded_content, $response->status_line ),
-	  "\n"
+	die CTAN::ErrorHandler::format( $response->decoded_content,
+								    $response->status_line ), "\n"
 	  if not $response->is_success;
 
-	if ( $method == VALIDATE and $response->decoded_content eq '[]' ) {
-		print "ok\n";
+	local $_ = $response->decoded_content;
+	print STDERR $response->decoded_content, "\n\n" if $debug;
+	while (m/\"([a-z0-9]+)\":\{([^{}]*)\}/i) {
+		my $f = $1;
+		my %a = ();
+		$_ = $';
+		my $attr = $2;
+		while ( $attr =~ m/\"([a-z0-9]+)\":([a-z0-9]+|"[^"]*")/i ) {
+			$attr = $';
+			$a{$1} = $2;
+			$a{$1} =~ s/(^"|"$)//g;
+		}
+		$this->{$f} = \%a;
+		push @CTAN::Upload::Fields::parameter, $f;
 	}
-	else {
-		print format_errors( $response->decoded_content, 'ok' ), "\n";
-	}
+	return $this;
 }
 
+
+###############################################################################
+package CTAN::ErrorHandler;
+
 #------------------------------------------------------------------------------
-# Function:		format_errors
+# Function:		format
 # Arguments:
 #	$json		the JSON list with the messages
 #   $fallback	the fallback message if the first parameter is empty
 # Description:
 #
-sub format_errors {
+sub format{
 	local $_ = shift;
 	if ( $_ eq '' ) {
 		return shift;
@@ -309,41 +343,243 @@ sub format_errors {
 		return "Unexpected HTML response found under $CTAN_URL";
 	}
 	
-	my $json = parse_json($_);
+	my $json = (new JSON::Parser())->parse($_);
 	return join("\n", map { join(': ', @$_ )} @$json);
 }
 
+
+###############################################################################
+package CTAN::Pkg;
+
+use LWP::UserAgent;
+use LWP::Protocol::https;
+use HTTP::Request::Common;
+
 #------------------------------------------------------------------------------
-# Function:		parse_json
+# Constructor:	new
+# Description:	This is the constructor
+#
+sub new
+{ my $proto = shift;
+  my $class = ref($proto) || $proto;
+  my $this  = [];
+  return bless $this,$class;
+}
+
+#------------------------------------------------------------------------------
+# Method:		read
+# Arguments:	none
+# Description:
+#	This function parses a configuration file in (La)TeX form and returns
+#   it as hash-like list.
+#
+sub read {
+	my ($this, $file) = @_;
+	die "*** Configuration file missing.\n" if not defined $file;
+	
+	my $fields = new CTAN::Upload::Fields();
+	my $fd  = new FileHandle($file)
+	  || die "*** Configuration file `$file' could not be read.\n";
+	local $_;
+
+	while (<$fd>) {
+		s/^[ \t]*%.*//;
+		s/([^\\])%.*/$1/;
+		while (m/\\([a-z]+)/i) {
+			$_ = $';
+			if ( $1 eq 'begin' ) {
+				die "$file $.: missing {environment} instead of $_\n"
+				  if not m/^[ \t]*\{([a-z]*)\}/i;
+				my $tag = $1;
+				my $val = '';
+				$_ = $';
+				while ( not m/\\end\{$tag\}/ ) {
+					$val .= $_;
+					$_ = <$fd>;
+					die "$file $.: "
+					  . "unexpected end of file while searching end of $tag\n"
+					  if not defined $_;
+				}
+				m/\\end\{$tag\}/;
+				$val .= $`;
+				$val =~ s/^[ \t\n\r]*//m;
+				$val =~ s/[ \t\n\r]*$//m;
+				push @$this, $tag => $val;
+				$_ = $';
+			}
+			elsif ( $1 eq 'endinput' ) {
+				last;
+			}
+			elsif ( defined $fields->{$1} ) {
+				my $key = $1;
+				die "$file $.: missing {environment} instead of $_\n"
+				  if not m/^[ \t]*\{([^{}]*)\}/i;
+
+				if ( $key eq 'file' ) {	push @$this, $key => [$1];
+				} 				 else { push @$this, $key => $1; }
+				$_ = $';
+			}
+			else {
+				die "$file $.: undefined keyword $&\n";
+			}
+			s/^[ \t]*%.*//;
+		}
+	}
+	$fd->close();
+	return $this;
+}
+
+#------------------------------------------------------------------------------
+# Function:		upload
+# Arguments:	...
+# Description:	Connect to the CTAN server to upload or validate the package.
+#
+sub upload {
+	my $this = shift;
+	my $submit = shift;
+	print STDERR "Uploading to CTAN..." if $verbose;
+	my $service_url = $UPLOAD_URL;
+	$service_url = $VALIDATE_URL if not $submit;
+	my $ua      = LWP::UserAgent->new();
+	my $request = POST ($service_url,
+	  'Content_Type' => 'multipart/form-data',
+	  'Content'      => $this);
+
+	print STDERR "done\n" if $verbose;
+	my $response = $ua->request($request);
+
+	die CTAN::ErrorHandler::format($response->decoded_content,
+								   $response->status_line),
+	  "\n"
+	  if not $response->is_success;
+
+	if ( not $submit and $response->decoded_content eq '[]' ) {
+		print "ok\n";
+	}
+	else {
+		print CTAN::ErrorHandler::format( $response->decoded_content, 'ok' ),
+			  "\n";
+	}
+	return $this;
+}
+
+#------------------------------------------------------------------------------
+# Function:		write
+# Arguments:	...
+# Description:	Write a new configuration to stdout.
+#
+sub write {
+	my $this = shift;
+	my $fields = shift;
+	my %values = @_;
+
+	print <<__EOF__;
+% This is a description file for ctan-o-mat.
+% It manages uploads of a package to 
+% CTAN -- the Comprehensive TeX Archive Network.
+%
+% The syntax is roughly oriented towards (La)TeX.
+% Two form of the macros are used. The simple macros take one argument
+% in braces. Here the argument may not contain embedded macros.
+%
+% The second form uses an environment enclosed in \\begin{}/\\end{}.
+% In the long text fields logo macros can be used.
+%
+% You should enter your values between the begin and the end of the
+% named type.
+__EOF__
+	local $_;
+	foreach (@CTAN::Upload::Fields::parameter) {
+		print <<__EOF__;
+% -------------------------------------------------------------------------
+% This field contains the $fields->{$_}->{'text'}.
+__EOF__
+		if ( defined $fields->{$_}->{'nullable'} ) {
+			print "% The value is optional.\n";
+		}
+		if ( defined $fields->{$_}->{'url'} ) {
+			print "% The value is a URL.\n";
+		}
+		if ( defined $fields->{$_}->{'email'} ) {
+			print "% The value is an email address.\n";
+		}
+		if ( defined $fields->{$_}->{'file'} ) {
+			print
+			  "% The value is the file name of the archive to be uploaded.\n";
+			print "% It may have a relative or absolute directory.\n";
+		}
+		if ( defined $fields->{$_}->{'maxsize'} ) {
+			print
+"% The value is restricted to $fields->{$_}->{'maxsize'} characters.\n";
+		}
+		if ( defined $fields->{$_}->{'list'} ) {
+			print "% Multiple values are allowed.\n\\$_\{}\n";
+		}
+		elsif ( defined $fields->{$_}->{'maxsize'}
+			and $fields->{$_}->{'maxsize'} ne 'null'
+			and $fields->{$_}->{'maxsize'} < 256 )
+		{   my $v = $values{$_};
+			$v = ''  if not defined $v;
+			print "\\$_\{$v\}\n";
+		}
+		else {
+			my $v = $values{$_};
+			if (defined $v) {
+				$v = "\n  " + $v + "\n";
+			} else {
+				$v = '';
+			}
+			
+			print "\\begin{$_}$v\\end{$_}\n";
+		}
+	}
+}
+
+###############################################################################
+package JSON::Parser;
+
+#------------------------------------------------------------------------------
+# Constructor:	new
+# Description:	This is the constructor
+#
+sub new
+{ my $proto = shift;
+  my $class = ref($proto) || $proto;
+  my $this  = {};
+  return bless $this,$class;
+}
+
+#------------------------------------------------------------------------------
+# Method:		parse
 # Arguments:
 #	$json		the JSON list with the messages
 # Description:
 #
-sub parse_json {
-	local $_ = shift;
-	my ( $result, $remainder ) = scan_json($_);
+sub parse {
+	my ($this, $json) = @_;
+	my ( $result, $remainder ) = $this->scan($json);
 	chomp $remainder;
 	if ($remainder ne '' ) {
-		die "unprocessed JSON: $remainder\n";
+		die "Unprocessed JSON: $remainder\n";
 	}
 	return $result;
 }
 
 #------------------------------------------------------------------------------
-# Function:		scan_json
+# Method:		scan
 # Arguments:
 #	$json		the JSON list with the messages
 # Description:
 #
-sub scan_json {
+sub scan {
+	my ($this, $json) = @_;
 	local $_;
-	my $json = shift;
 	$json =~ s/^\s+//;
 	if ($json =~ m/^\[\s*/) {
 		my @a = ();
 		$json = $';
 		while ( not $json =~ m/^\]/ ) {
-			my ($el, $remainder) = scan_json($json);
+			my ($el, $remainder) = $this->scan($json);
 			push @a, $el;
 			$json = $remainder;
 			if ($json =~ m/^\s*,/) {
@@ -393,213 +629,6 @@ sub scan_json {
 	}
 
 	die "Parse error at: $json\n";
-}
-
-#------------------------------------------------------------------------------
-# Function:		fields
-# Arguments:	none
-# Description:	Retrieve a list of currently supported fields from the
-#				CTAN server.
-#
-sub fields {
-	print STDERR "Retrieving fields from CTAN..." if $verbose;
-	print STDERR $FIELDS_URL if $debug;
-	my $response;
-	eval {
-		my $ua      = LWP::UserAgent->new();
-		my $request = GET $FIELDS_URL;
-		print STDERR "done\n" if $verbose;
-		$response = $ua->request($request);
-	};
-
-	die format_errors( $response->decoded_content, $response->status_line ),
-	  "\n"
-	  if not $response->is_success;
-
-	local $_ = $response->decoded_content;
-	print STDERR $response->decoded_content, "\n\n" if $debug;
-	while (m/\"([a-z0-9]+)\":\{([^{}]*)\}/i) {
-		my $f = $1;
-		my %a = ();
-		$_ = $';
-		my $attr = $2;
-		while ( $attr =~ m/\"([a-z0-9]+)\":([a-z0-9]+|"[^"]*")/i ) {
-			$attr = $';
-			$a{$1} = $2;
-			$a{$1} =~ s/(^"|"$)//g;
-		}
-		$fields{$f} = \%a;
-		push @parameter, $f;
-	}
-}
-
-#------------------------------------------------------------------------------
-# Function:		read_config
-# Arguments:	none
-# Description:
-#	This function parses a configuration file in (La)TeX form and returns
-#   it as hash-like list.
-#
-sub read_config {
-	my @cfg = ();
-	my $fd  = new FileHandle($config)
-	  || die "*** Configuration file `$config' could not be read.\n";
-	local $_;
-
-	while (<$fd>) {
-		s/^[ \t]*%.*//;
-		s/([^\\])%.*/$1/;
-		while (m/\\([a-z]+)/i) {
-			$_ = $';
-			if ( $1 eq 'begin' ) {
-				die "$config $.: missing {environment} instead of $_\n"
-				  if not m/^[ \t]*\{([a-z]*)\}/i;
-				my $tag = $1;
-				my $val = '';
-				$_ = $';
-				while ( not m/\\end\{$tag\}/ ) {
-					$val .= $_;
-					$_ = <$fd>;
-					die "$config $.: "
-					  . "unexpected end of file while searching end of $tag\n"
-					  if not defined $_;
-				}
-				m/\\end\{$tag\}/;
-				$val .= $`;
-				$val =~ s/^[ \t\n\r]*//m;
-				$val =~ s/[ \t\n\r]*$//m;
-				push @cfg, $tag => $val;
-				$_ = $';
-			}
-			elsif ( $1 eq 'endinput' ) {
-				last;
-			}
-			elsif ( defined $fields{$1} ) {
-				my $key = $1;
-				die "$config $.: missing {environment} instead of $_\n"
-				  if not m/^[ \t]*\{([^{}]*)\}/i;
-
-				if ( $key eq 'file' ) {
-					push @cfg, $key => [$1];
-				}
-				else { push @cfg, $key => $1; }
-				$_ = $';
-			}
-			else {
-				die "$config $.: undefined keyword $&\n";
-			}
-			s/^[ \t]*%.*//;
-		}
-	}
-	$fd->close();
-	return \@cfg;
-}
-
-#------------------------------------------------------------------------------
-# Function:		increment_config
-# Arguments:	none
-# Description:
-#
-sub increment_config {
-
-	my $modified = undef;
-	my $fd       = new FileHandle($config)
-	  || die "*** Configuration file `$config' could not be read.\n";
-	local $_;
-	my $content = '';
-
-	while (<$fd>) {
-		if (m/^[ \t]*%/) {
-			$content .= $_;
-			next;
-		}
-		if (m/\\version{([^}]*[^}0-9]*)([0-9]+)}/) {
-			$content .= $` . "\\version{$1" . ( $2 + 1 ) . "}" . $';
-			$modified = 1;
-			next;
-		}
-		else {
-			$content .= $_;
-		}
-	}
-	$fd->close();
-
-	if ($modified) {
-		rename $config, $config . '.bak';
-		$fd = new FileHandle( $config, 'w' );
-		print $fd $content;
-		$fd->close();
-	}
-}
-
-#------------------------------------------------------------------------------
-# Function:		new_config
-# Arguments:	none
-# Description:	Write a new configuration to stdout.
-#
-sub new_config {
-	my %values = @_;
-
-	print <<__EOF__;
-% This is a description file for ctan-o-mat.
-% It manages uploads of a package to 
-% CTAN -- the Comprehensive TeX Archive Network.
-%
-% The syntax is roughly oriented towards (La)TeX.
-% Two form of the macros are used. The simple macros take one argument
-% in braces. Here the argument may not contain embedded macros.
-%
-% The second form uses an environment enclosed in \\begin{}/\\end{}.
-% In the long text fields logo macros can be used.
-%
-% You should enter your values between the begin and the end of the
-% named type.
-__EOF__
-	local $_;
-	foreach (@parameter) {
-		print <<__EOF__;
-% -------------------------------------------------------------------------
-% This field contains the $fields{$_}->{'text'}.
-__EOF__
-		if ( defined $fields{$_}->{'nullable'} ) {
-			print "% The value is optional.\n";
-		}
-		if ( defined $fields{$_}->{'url'} ) {
-			print "% The value is a URL.\n";
-		}
-		if ( defined $fields{$_}->{'email'} ) {
-			print "% The value is an email address.\n";
-		}
-		if ( defined $fields{$_}->{'file'} ) {
-			print
-			  "% The value is the file name of the archive to be uploaded.\n";
-			print "% It may have a relative or absolute directory.\n";
-		}
-		if ( defined $fields{$_}->{'maxsize'} ) {
-			print
-"% The value is restricted to $fields{$_}->{'maxsize'} characters.\n";
-		}
-		if ( defined $fields{$_}->{'list'} ) {
-			print "% Multiple values are allowed.\n\\$_\{}\n";
-		}
-		elsif ( defined $fields{$_}->{'maxsize'}
-			and $fields{$_}->{'maxsize'} ne 'null'
-			and $fields{$_}->{'maxsize'} < 256 )
-		{   my $v = $values{$_};
-			$v = ''  if not defined $v;
-			print "\\$_\{$v\}\n";
-		}
-		else {
-			my $v = $values{$_};
-			if (defined $v) {
-				$v = "\n  " + $v + "\n";
-			} else {
-				$v = '';
-			}
-			
-			print "\\begin{$_}$v\\end{$_}\n";
-		}
-	}
 }
 
 #------------------------------------------------------------------------------
