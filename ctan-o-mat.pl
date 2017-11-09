@@ -281,7 +281,7 @@ sub new
 }
 
 #------------------------------------------------------------------------------
-# Function:		load
+# Method:		load
 # Arguments:	none
 # Description:	Retrieve a list of currently supported fields from the
 #				CTAN server.
@@ -327,7 +327,7 @@ sub load {
 package CTAN::ErrorHandler;
 
 #------------------------------------------------------------------------------
-# Function:		format
+# Method:		format
 # Arguments:
 #	$json		the JSON list with the messages
 #   $fallback	the fallback message if the first parameter is empty
@@ -367,7 +367,7 @@ sub new
 
 #------------------------------------------------------------------------------
 # Method:		add
-# Arguments:	...
+# Arguments:	arbitrary many key/value pairs
 # Description:
 #	This function adds a key/value pair to the object.
 #
@@ -448,7 +448,7 @@ sub read {
 }
 
 #------------------------------------------------------------------------------
-# Function:		upload
+# Method:		upload
 # Arguments:	...
 # Description:	Connect to the CTAN server to upload or validate the package.
 #
@@ -487,8 +487,8 @@ sub upload {
 }
 
 #------------------------------------------------------------------------------
-# Function:		write
-# Arguments:	...
+# Method:		write
+# Arguments:	none
 # Description:	Write a new configuration to stdout.
 #
 sub write {
@@ -576,7 +576,8 @@ sub new
 # Method:		parse
 # Arguments:
 #	$json		the JSON list with the messages
-# Description:
+# Description:	Parse the input string for a JSON object and retrun the Perl
+#				representation of it.
 #
 sub parse {
 	my ($this, $json) = @_;
@@ -592,7 +593,7 @@ sub parse {
 # Method:		scan
 # Arguments:
 #	$json		the JSON list with the messages
-# Description:
+# Description:	Scan the input string for the next token
 #
 sub scan {
 	my ($this, $json) = @_;
