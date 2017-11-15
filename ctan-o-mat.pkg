@@ -85,7 +85,7 @@
 % This field contains the update indicator; true for update.
 % The value is optional.
 % The value is restricted to 8 characters.
-\update{false}
+\update{true}
 % -------------------------------------------------------------------------
 % This field contains the topics id.
 % The value is optional.
@@ -116,6 +116,11 @@ from the server.
 \end{announcement}
 % -------------------------------------------------------------------------
 % This field contains the one-liner for the package.
+% The value is optional.
+% The value is restricted to 128 characters.
+\summary{Upload or validate a package for CTAN}
+% -------------------------------------------------------------------------
+% This field contains the descriptive abstract for the package.
 % The value is optional.
 % The value is restricted to 4096 characters.
 \begin{description}Upload or validate a package for CTAN\end{description}
