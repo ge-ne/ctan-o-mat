@@ -100,6 +100,25 @@
 This program can be used to automate the upload of a package to CTAN.
 The description of the package is contained in a configuration file.
 
+Changes:
+
+- Handling of directories with spaces improved.
+- Error messages improved.
+- Wrong version on CTAN fixed
+\end{announcement}
+% -------------------------------------------------------------------------
+% This field contains the one-liner for the package.
+% The value is optional.
+% The value is restricted to 128 characters.
+\summary{Upload or validate a package for CTAN}
+% -------------------------------------------------------------------------
+% This field contains the descriptive abstract for the package.
+% The value is optional.
+% The value is restricted to 4096 characters.
+\begin{description}
+This program can be used to automate the upload of a package to CTAN.
+The description of the package is contained in a configuration file.
+
 The provided information is validated in any case. If the validation
 succeeds and not only the validation is requested then the provided
 archive file is placed in the incoming area of the CTAN for further
@@ -113,17 +132,7 @@ line option.
 ctan-o-mat requires an Internet connection to the CTAN server. Even the
 validation retrieves the known attributes and the basic constraints
 from the server.
-\end{announcement}
-% -------------------------------------------------------------------------
-% This field contains the one-liner for the package.
-% The value is optional.
-% The value is restricted to 128 characters.
-\summary{Upload or validate a package for CTAN}
-% -------------------------------------------------------------------------
-% This field contains the descriptive abstract for the package.
-% The value is optional.
-% The value is restricted to 4096 characters.
-\begin{description}Upload or validate a package for CTAN\end{description}
+\end{description}
 % -------------------------------------------------------------------------
 % This field contains the note to the CTAN upload managers.
 % The value is optional.

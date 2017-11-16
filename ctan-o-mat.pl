@@ -405,7 +405,8 @@ sub read {
 		s/([^\\])%.*/$1/;
 		while (m/\\([a-z]+)/i) {
 			$_ = $';
-			if ( $1 eq 'begin' ) {
+			my $keyword = $1;
+			if ( $keyword eq 'begin' ) {
 				die "$file:$.: missing {environment} instead of $_\n"
 				  if not m/^[ \t]*\{([a-z]*)\}/i;
 				my $tag = $1;
@@ -419,26 +420,25 @@ sub read {
 					  if not defined $_;
 				}
 				m/\\end\{$tag\}/;
+				$_ = $';
 				$val .= $`;
 				$val =~ s/^[ \t\n\r]*//m;
 				$val =~ s/[ \t\n\r]*$//m;
 				push @$this, $tag => $val;
-				$_ = $';
 			}
-			elsif ( $1 eq 'endinput' ) {
+			elsif ( $keyword eq 'endinput' ) {
 				last;
 			}
-			elsif ( defined $fields->{$1} ) {
-				my $key = $1;
+			elsif ( defined $fields->{$keyword} ) {
 				die "$file:$.: missing {environment} instead of $_\n"
 				  if not m/^[ \t]*\{([^{}]*)\}/i;
 
-				if ( $key eq 'file' ) {	push @$this, $key => [$1];
-				} 				 else { push @$this, $key => $1; }
+				if ( $keyword eq 'file' ) {	push @$this, $keyword => [$1];
+				} 			 	     else { push @$this, $keyword => $1; }
 				$_ = $';
 			}
 			else {
-				die "$file:$.: undefined keyword $&\n";
+				die "$file:$.: undefined keyword $keyword\n";
 			}
 			s/^[ \t]*%.*//;
 		}

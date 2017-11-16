@@ -149,7 +149,7 @@ done.
 
 ### CREATING THE DOCUMENTATION
 
-The PDF documentation is generated from this README.md file This can
+The PDF documentation is generated from the file `README.md`. This can
 be done with the following command:
 
 ```
@@ -165,6 +165,7 @@ path.
 *ctan-o-mat* lives in a public repository at GitHub. It can be found under the
 URL https://github.com/ge-ne/ctan-o-mat.
 
+*ctan-o-mat* can be found on CTAN under the URL https://www.ctan.org/pkg/ctan-o-mat.
 
 ## AUTHOR
 
