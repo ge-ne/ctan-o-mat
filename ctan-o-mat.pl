@@ -167,7 +167,7 @@ use FileHandle;
 use File::Basename;
 use Cwd;
 
-use constant VERSION => '1.1 alpha';
+use constant VERSION => '1.1';
 
 #------------------------------------------------------------------------------
 # Function:		usage
