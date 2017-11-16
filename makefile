@@ -41,6 +41,12 @@ pdf doc ctan-o-mat.pdf: README.md makefile lib/md2ltx.pl
 	@$(LATEX) -interaction=batchmode ctan-o-mat.latex
 	@$(RM) ctan-o-mat.out ctan-o-mat.aux ctan-o-mat.log ctan-o-mat.latex
 
+val validate: ctan-o-mat.pdf ctan-o-mat.zip
+	@./ctan-o-mat
+
+submit upload: ctan-o-mat.pdf ctan-o-mat.zip
+	@./ctan-o-mat -submit
+
 dist ctan-o-mat.zip: $(FILES)
 	$(RM) ctan-o-mat.zip
 	(cd ..; zip ctan-o-mat/ctan-o-mat.zip $(addprefix ctan-o-mat/,$(FILES)))
