@@ -30,7 +30,7 @@ LATEX   = xelatex
 
 #------------------------------------------------------------------------------
 
-all:
+all: validate
 
 clean distclean:
 	$(RM) -f *~ *.out *.log *.aux ctan-o-mat.ltx
