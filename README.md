@@ -55,6 +55,15 @@ configuration via the command line parameter `--init`.
     Create an empty template for a configuration.
   </dd>
   
+  <dt><code>--list licenses</code></dt>
+  <dd>
+    List the known licenses of CTAN to the standard output stream.
+    Each license is represented as one line. The line contains the
+    fields key, name, free indicator. Those fields are separated by
+    tab characters. Afterwards the program terminates without processing
+    any further arguments.
+  </dd>
+  
   <dt><code>--submit</code></dt>
   <dd>
     Upload the submission, validate it and officially submit it to

@@ -20,7 +20,7 @@
 % This field contains the version of the package.
 % The value is optional.
 % The value is restricted to 32 characters.
-\version{1.1}
+\version{1.2}
 % -------------------------------------------------------------------------
 % This field contains the name of the author(s).
 % The value is optional.
@@ -102,9 +102,10 @@ The description of the package is contained in a configuration file.
 
 Changes:
 
-- Handling of directories with spaces improved.
-- Error messages improved.
-- Wrong version on CTAN fixed
+- Command line parameter `--list licenses' added to retrieve the
+  known keys for licenses.
+- Verbose message for validation improved.
+- --init creates macro for \file instead of an environment.
 \end{announcement}
 % -------------------------------------------------------------------------
 % This field contains the one-liner for the package.
@@ -138,8 +139,6 @@ from the server.
 % The value is optional.
 % The value is restricted to 2048 characters.
 \begin{note}
-Sorry, the wrong zip has made it to CTAN.
-This gives me the chance to publish a few minor problems too.
 \end{note}
 % -------------------------------------------------------------------------
 % This field contains the archive file.
