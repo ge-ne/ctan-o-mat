@@ -106,6 +106,7 @@ Changes:
   known keys for licenses.
 - Verbose message for validation improved.
 - --init creates macro for \file instead of an environment.
+- Now environments and macros are close to be identical.
 \end{announcement}
 % -------------------------------------------------------------------------
 % This field contains the one-liner for the package.
