@@ -252,7 +252,8 @@ GetOptions(
 	},
 );
 
-( new CTAN::Pkg() )->read( pkg_name_or_fallback( $ARGV[0] || $cfg, '.pkg' ) )
+new CTAN::Pkg()
+  ->read( pkg_name_or_fallback( $ARGV[0] || $cfg, '.pkg' ) )
   ->upload($submit);
 
 #------------------------------------------------------------------------------
@@ -282,7 +283,6 @@ package JSON::Parser;
 #
 sub new {
 	my $proto = shift;
-	print STDERR "+new\n" if $debug;
 	my $class = ref($proto) || $proto;
 	my $this = {};
 
@@ -298,7 +298,6 @@ sub new {
 #
 sub parse {
 	my ( $this, $json ) = @_;
-	print STDERR "+ parse\n" if $debug;
 
 	my ( $result, $remainder ) = $this->scan($json);
 	chomp $remainder;
@@ -316,46 +315,44 @@ sub parse {
 #
 sub scan {
 	my ( $this, $json ) = @_;
-	local $_;
+	local $_ = $json;
 
-	print STDERR "+scan\n" if $debug;
-
-	$json =~ s/^\s+//;
-	if ( $json =~ m/^\[\s*/ ) {
+	s/^\s+//;
+	if ( m/^\[\s*/ ) {
 		my @a = ();
-		$json = $';
-		while ( not $json =~ m/^\]/ ) {
-			my ( $el, $remainder ) = $this->scan($json);
+		$_ = $';
+		while ( not m/^\]/ ) {
+			my ( $el, $remainder ) = $this->scan($_);
 			push @a, $el;
-			$json = $remainder;
-			$json =~ s/^\s*,\s*//;
+			$_ = $remainder;
+			s/^\s*,\s*//;
 		}
-		$json = substr( $json, 1 );
-		return ( \@a, $json );
+		$_ = substr( $_, 1 );
+		return ( \@a, $_ );
 	}
-	elsif ( $json =~ m/^\{\s*/ ) {
+	elsif ( m/^\{\s*/ ) {
 		my %a = ();
-		$json = $';
-		while ( not $json =~ m/^\}/ ) {
-			my ( $key, $remainder ) = $this->scan($json);
-			$json = $remainder;
-			$json =~ s/^\s*:\s*//;
-			my ( $val, $remainder2 ) = $this->scan($json);
-			$json = $remainder2;
+		$_ = $';
+		while ( not m/^\}/ ) {
+			my ( $key, $remainder ) = $this->scan($_);
+			$_ = $remainder;
+			s/^\s*:\s*//;
+			my ( $val, $remainder2 ) = $this->scan($_);
+			$_ = $remainder2;
 			$a{$key} = $val;
-			$json =~ s/^\s*,\s*//;
+			s/^\s*,\s*//;
 		}
-		$json = substr( $json, 1 );
-		return ( \%a, $json );
+		$_ = substr( $_, 1 );
+		return ( \%a, $_ );
 	}
-	elsif ( $json =~ m/^"/ ) {
-		$json = $';
+	elsif ( $_ =~ m/^"/ ) {
+		$_ = $';
 		my $s = '';
-		while ( $json =~ m/(\\.|")/ ) {
+		while ( m/(\\.|")/ ) {
 			$s .= $`;
-			$json = $';
+			$_ = $';
 			if ( $& eq '"' ) {
-				return ( $s, $json );
+				return ( $s, $_ );
 			}
 			if ( $& eq '\\n' ) {
 				$s .= "\n";
@@ -381,13 +378,13 @@ sub scan {
 		}
 		die "*** Missing end of string\n";
 	}
-	elsif ( $json =~ m/^([0-9]+|[a-z]+)/i ) {
-		$json = $';
-		$_    = $&;
-		return ( $_, $json );
+	elsif ( m/^([0-9]+|[a-z]+)/i ) {
+		$_ = $';
+		$_ = $&;
+		return ( $_, $_ );
 	}
 
-	die "*** Parse error at: $json\n";
+	die "*** Parse error at: $_\n";
 }
 
 ###############################################################################
