@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 ##-----------------------------------------------------------------------------
 ## This file is part of ctan-o-mat.
 ## This program is distributed under BSD-like license. See file LICENSE
