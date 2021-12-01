@@ -52,7 +52,7 @@ configuration via the command line parameter `--init`.
 
   <dt><code>--init</code></dt>
   <dd>
-    Create an empty template for a configuration.
+    Create an empty template for a configuration on stdout.
   </dd>
   
   <dt><code>--list licenses</code></dt>
