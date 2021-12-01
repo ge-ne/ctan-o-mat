@@ -74,7 +74,7 @@ Print this short summary about the usage and exit the program.
 
 =item --init
 
-Create an empty template for a configuration.
+Create an empty template for a configuration on stdout.
 
 =item --list licenses
 
